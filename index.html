@@ -8,7 +8,56 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23000'/%3E%3Ctext x='16' y='22' font-family='Inter,system-ui,sans-serif' font-size='18' font-weight='600' fill='%23fff' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<!-- Three.js (global build, powers the hero particle text) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- GSAP + plugins — 3.13.0: SplitText is only in the free npm package from 3.13 (3.12.5 URL 404s) -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+
+<!-- Lenis smooth scroll -->
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+
+<!-- threejs-toys neon cursor (module = deferred; #app exists by execution time).
+     Its WebGL canvas is opaque black (alpha:false), so it's mounted as a fixed
+     overlay with mix-blend-mode:screen and pointer events are forwarded to it. -->
+<script type="module">
+  const isTouch = window.matchMedia("(hover: none)").matches;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wideEnough = window.matchMedia("(min-width: 720px)").matches; // idle trail overwhelms tiny viewports
+  if (!isTouch && !reduced && wideEnough) {
+    try {
+      const { neonCursor } = await import("https://unpkg.com/threejs-toys@0.0.8/build/threejs-toys.module.cdn.min.js");
+      const app = document.getElementById("app");
+      neonCursor({
+        el: app,
+        shaderPoints: 16,
+        curvePoints: 80,
+        curveLerp: 0.5,
+        radius1: 5,
+        radius2: 30,
+        velocityTreshold: 10,
+        sleepRadiusX: 100,
+        sleepRadiusY: 100,
+        sleepTimeCoefX: 0.0025,
+        sleepTimeCoefY: 0.0025
+      });
+      // #app is pointer-events:none, so real events never hit it — forward from window
+      const fwd = (type) => (e) =>
+        app.dispatchEvent(new PointerEvent(type, { clientX: e.clientX, clientY: e.clientY, bubbles: false }));
+      app.dispatchEvent(new PointerEvent("pointerenter", { clientX: innerWidth / 2, clientY: innerHeight / 2 }));
+      window.addEventListener("pointermove", fwd("pointermove"), { passive: true });
+      window.addEventListener("pointerdown", fwd("pointerdown"), { passive: true });
+      window.addEventListener("pointerup", fwd("pointerup"), { passive: true });
+    } catch (e) {
+      console.warn("neon cursor unavailable:", e);
+    }
+  }
+</script>
+
 <style>
   /* ─────────────────────────  Tokens  ───────────────────────── */
   :root {
@@ -41,25 +90,44 @@
 
   /* ───── Film grain overlay (CSS only) ───── */
   body::after {
-    content: "";
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 99999;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 128px 128px;
+  }
+
+  /* ───── Neon cursor overlay (threejs-toys) ───── */
+  #app {
     position: fixed;
     inset: 0;
-    z-index: 200;
+    z-index: 70;
     pointer-events: none;
-    opacity: 0.03;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 240px 240px;
+    /* blend the whole overlay (it's a stacking context) with the page:
+       the opaque-black WebGL canvas becomes additive glow */
+    mix-blend-mode: screen;
+  }
+  #app canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    /* crush the shader's 1/dist ambient wash so far-field glow reads as black */
+    filter: brightness(1.05) contrast(2.6);
+    opacity: 0.8;
   }
 
   /* ───── Cursor spotlight ───── */
   #spotlight {
     position: fixed;
     inset: 0;
-    z-index: 50;
+    z-index: 9999;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.4s ease;
-    background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.15), transparent 70%);
   }
   #spotlight.on { opacity: 1; }
 
@@ -67,7 +135,7 @@
   #cursor-label {
     position: fixed;
     top: 0; left: 0;
-    z-index: 300;
+    z-index: 10000;
     pointer-events: none;
     font-family: var(--mono);
     font-size: 11px;
@@ -79,11 +147,11 @@
     border-radius: 100px;
     white-space: nowrap;
     opacity: 0;
-    transform: translate(16px, 16px) scale(0.8);
+    transform: translate(8px, 8px) scale(0.8);
     transition: opacity 0.2s ease, transform 0.2s ease;
     will-change: left, top;
   }
-  #cursor-label.on { opacity: 1; transform: translate(16px, 16px) scale(1); }
+  #cursor-label.on { opacity: 1; transform: translate(8px, 8px) scale(1); }
 
   .wrap { max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
   .eyebrow {
@@ -96,6 +164,8 @@
   }
 
   /* ─────────────────────────  Buttons  ───────────────────────── */
+  .eb-wrap { position: relative; display: inline-flex; border-radius: 100px; }
+  .eb-canvas { position: absolute; inset: -26px; width: calc(100% + 52px); height: calc(100% + 52px); pointer-events: none; }
   .btn {
     display: inline-flex;
     align-items: center;
@@ -110,12 +180,15 @@
     letter-spacing: -0.01em;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: transform 0.2s var(--ease), background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+    position: relative;
+    z-index: 1;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+    will-change: transform;
   }
   .btn-primary { background: var(--white); color: var(--black); }
-  .btn-primary:hover { transform: translateY(-2px); background: #e8e8e8; }
+  .btn-primary:hover { background: #e8e8e8; }
   .btn-secondary { background: transparent; color: var(--white); border-color: var(--border); }
-  .btn-secondary:hover { transform: translateY(-2px); border-color: var(--white); background: rgba(255,255,255,0.04); }
+  .btn-secondary:hover { border-color: var(--white); background: rgba(255,255,255,0.04); }
 
   /* ─────────────────────────  Nav  ───────────────────────── */
   nav {
@@ -144,9 +217,8 @@
   .nav-cta {
     height: 36px; padding: 0 16px; border-radius: 100px; font-size: 14px; font-weight: 500;
     background: var(--white); color: var(--black); display: inline-flex; align-items: center;
-    transition: transform 0.2s var(--ease);
+    position: relative; z-index: 1; will-change: transform;
   }
-  .nav-cta:hover { transform: translateY(-1px); }
   @media (max-width: 720px) { .nav-links a:not(.nav-cta) { display: none; } }
 
   /* ─────────────────────────  Hero  ───────────────────────── */
@@ -157,29 +229,28 @@
     align-items: center;
     overflow: hidden;
   }
-  #hero-canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    z-index: 0;
-  }
-  /* CSS fallback if WebGL2 unavailable */
   .hero-fallback {
     position: absolute; inset: 0; z-index: 0;
     background:
-      radial-gradient(60% 50% at 30% 20%, #1a1a1a 0%, transparent 70%),
-      radial-gradient(50% 60% at 80% 70%, #222 0%, transparent 70%),
+      radial-gradient(60% 50% at 30% 20%, #141414 0%, transparent 70%),
+      radial-gradient(50% 60% at 80% 70%, #181818 0%, transparent 70%),
       linear-gradient(180deg, #000 0%, #0a0a0a 100%);
     background-size: 200% 200%;
     animation: drift 18s ease-in-out infinite alternate;
   }
   @keyframes drift { to { background-position: 100% 100%; } }
+  #particle-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 1;
+  }
   .hero::after {
     content: "";
     position: absolute; inset: 0; z-index: 1;
-    background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%);
+    background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100%);
     pointer-events: none;
   }
   .hero .wrap { position: relative; z-index: 2; width: 100%; padding-top: 80px; padding-bottom: 80px; }
@@ -197,6 +268,7 @@
     letter-spacing: -0.045em;
     max-width: 14ch;
     margin-bottom: 24px;
+    will-change: text-shadow;
   }
   .hero p.sub {
     font-size: clamp(17px, 2.4vw, 22px);
@@ -227,35 +299,28 @@
     letter-spacing: -0.035em;
   }
   .section-head p { margin-top: 18px; font-size: 18px; color: var(--mute); max-width: 52ch; }
+  h2 .word { display: inline-block; will-change: transform, opacity; }
 
-  /* ─────────────────────────  Bento grid  ───────────────────────── */
+  /* ─────────────────────────  Bento grid (asymmetric, no numbers)  ───────────────────────── */
   .bento {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    grid-auto-rows: minmax(200px, auto);
+    grid-template-columns: repeat(10, 1fr);
+    grid-auto-rows: minmax(190px, auto);
     gap: 16px;
   }
   .cell {
     position: relative;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: linear-gradient(180deg, var(--surface) 0%, #050505 100%);
+    border: 1px solid #222;
+    border-radius: 12px;
+    background: #111;
     padding: 32px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
-    transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), background 0.3s var(--ease);
+    transition: border-color 0.3s var(--ease), transform 0.3s var(--ease);
   }
-  .cell::before {
-    content: "";
-    position: absolute; inset: 0;
-    background: radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,0.06) 0%, transparent 45%);
-    opacity: 0; transition: opacity 0.4s var(--ease);
-    pointer-events: none;
-  }
-  .cell:hover { border-color: #555; transform: translateY(-3px); }
-  .cell:hover::before { opacity: 1; }
+  .cell:hover { border-color: #444; transform: scale(1.02); }
   .cell .tag { font-family: var(--mono); font-size: 12px; color: var(--mute); letter-spacing: 0.08em; text-transform: uppercase; }
   .cell .ttl {
     font-weight: 600; letter-spacing: -0.03em; line-height: 1.0;
@@ -264,73 +329,85 @@
   .cell .desc { color: var(--mute); font-size: 15px; line-height: 1.5; margin-top: 12px; max-width: 36ch; }
   .cell .price { font-family: var(--mono); font-size: 13px; color: var(--white); margin-top: 18px; }
   .cell .price span { color: var(--mute); }
-
-  /* asymmetric placement */
-  .cell.website  { grid-column: span 7; grid-row: span 2; }
-  .cell.website .ttl { font-size: clamp(40px, 5vw, 64px); }
-  .cell.website .desc { font-size: 17px; max-width: 40ch; }
-  .cell.mobile   { grid-column: span 5; }
-  .cell.chatbot  { grid-column: span 5; }
-  .cell.booking  { grid-column: span 4; }
-  .cell.menu     { grid-column: span 4; }
-  .cell.seo      { grid-column: span 4; }
   .cell .big-mark {
     position: absolute; right: -10px; bottom: -30px;
     font-size: 180px; font-weight: 600; line-height: 1; color: rgba(255,255,255,0.025);
     letter-spacing: -0.05em; pointer-events: none; user-select: none;
   }
+
+  /* asymmetric placement: featured 60% / 2x2 right / asymmetric bottom row */
+  .cell.website  { grid-column: span 6; grid-row: span 2; }
+  .cell.website .ttl { font-size: clamp(40px, 5vw, 64px); }
+  .cell.website .desc { font-size: 17px; max-width: 40ch; }
+  .cell.mobile   { grid-column: span 4; }
+  .cell.chatbot  { grid-column: span 2; }
+  .cell.chatbot .ttl, .cell.booking .ttl { font-size: 22px; }
+  .cell.chatbot .desc, .cell.booking .desc { font-size: 13px; }
+  .cell.booking  { grid-column: span 2; }
+  .cell.menu     { grid-column: span 6; }
+  .cell.seo      { grid-column: span 4; }
   @media (max-width: 900px) {
-    .bento { grid-template-columns: repeat(2, 1fr); }
-    .cell.website { grid-column: span 2; grid-row: span 1; }
-    .cell.mobile, .cell.chatbot { grid-column: span 1; }
-    .cell.booking, .cell.menu, .cell.seo { grid-column: span 2; }
+    .bento { grid-template-columns: repeat(10, 1fr); }
+    .cell.website { grid-column: span 10; grid-row: span 1; }
+    .cell.mobile  { grid-column: span 10; }
+    .cell.chatbot { grid-column: span 6; }
+    .cell.booking { grid-column: span 4; }
+    .cell.menu    { grid-column: span 6; }
+    .cell.seo     { grid-column: span 4; }
   }
   @media (max-width: 560px) {
     .bento { grid-template-columns: 1fr; }
     .cell, .cell.website, .cell.mobile, .cell.chatbot, .cell.booking, .cell.menu, .cell.seo { grid-column: span 1; }
     .cell { padding: 26px; }
+    .cell.chatbot .ttl, .cell.booking .ttl { font-size: 28px; }
+    .cell.chatbot .desc, .cell.booking .desc { font-size: 15px; }
   }
 
-  /* ─────────────────────────  Carousel (3D)  ───────────────────────── */
-  .carousel-band { background: linear-gradient(180deg, #000 0%, #060606 50%, #000 100%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); overflow: hidden; }
+  /* ─────────────────────────  Template gallery — draggable 3D arc  ───────────────────────── */
+  .carousel-band {
+    background: linear-gradient(180deg, #000 0%, #060606 50%, #000 100%);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
   .carousel-head { text-align: center; margin-bottom: 56px; }
   .carousel-head .eyebrow { display: block; margin-bottom: 16px; }
   .carousel-head h2 { font-size: clamp(32px, 5vw, 56px); font-weight: 600; letter-spacing: -0.035em; }
   .stage {
     position: relative;
-    height: 440px;
+    height: 460px;
     perspective: 1400px;
     margin: 0 auto;
+    cursor: grab;
+    touch-action: pan-y; /* horizontal swipe drags carousel, vertical still scrolls */
+    user-select: none;
+    -webkit-user-select: none;
   }
-  .carousel-3d {
-    position: absolute;
-    width: 320px; height: 400px;
-    left: 50%; top: 50%;
-    transform-style: preserve-3d;
-    transform: translate(-50%, -50%) translateZ(-520px);
-    transition: transform 0.9s var(--ease);
-  }
+  .stage.dragging { cursor: grabbing; }
+  #carousel { position: absolute; inset: 0; transform-style: preserve-3d; }
   .slide {
     position: absolute;
-    width: 320px; height: 400px;
-    left: 0; top: 0;
+    width: 300px; height: 390px;
+    left: 50%; top: 50%;
     border: 1px solid var(--border);
     border-radius: 14px;
-    overflow: hidden;
     background: var(--surface-2);
-    backface-visibility: hidden;
     box-shadow: 0 24px 60px -20px rgba(0,0,0,0.8);
-    will-change: transform;
+    will-change: transform, opacity;
   }
-  .hero h1 .w { display: inline-block; will-change: transform, opacity; }
-  .slide .shot { height: 100%; display: flex; flex-direction: column; }
-  .slide .bar { height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 14px; border-bottom: 1px solid var(--border); background: #0a0a0a; }
+  .slide .shot {
+    height: 100%; display: flex; flex-direction: column;
+    border-radius: 13px; overflow: hidden;
+    transition: transform 0.35s var(--ease);
+  }
+  .slide:hover .shot { transform: scale(1.05); }
+  .slide .bar { height: 34px; flex: 0 0 34px; display: flex; align-items: center; gap: 6px; padding: 0 14px; border-bottom: 1px solid var(--border); background: #0a0a0a; }
   .slide .bar i { width: 9px; height: 9px; border-radius: 50%; background: #2a2a2a; display: block; }
   .slide .canvas-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; }
   .slide .label { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(transparent, rgba(0,0,0,0.85)); }
   .slide .label .name { font-weight: 600; letter-spacing: -0.02em; font-size: 17px; }
   .slide .label .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; }
   .slide .ph { font-family: var(--mono); font-size: 12px; color: #555; letter-spacing: 0.1em; }
+  .slide .eb-slide { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: 13px; }
   .carousel-controls { display: flex; justify-content: center; gap: 12px; margin-top: 40px; }
   .carousel-controls button {
     width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border);
@@ -342,45 +419,54 @@
   .dots { display: flex; justify-content: center; gap: 8px; margin-top: 22px; }
   .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background 0.3s, width 0.3s; cursor: pointer; }
   .dots i.on { background: var(--white); width: 22px; border-radius: 100px; }
+  .drag-hint { text-align: center; margin-top: 18px; font-family: var(--mono); font-size: 11px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; }
   @media (max-width: 560px) {
-    .stage { height: 380px; }
-    .carousel-3d, .slide { width: 240px; height: 340px; }
+    .stage { height: 400px; }
+    .slide { width: 240px; height: 340px; }
   }
 
-  /* ─────────────────────────  How it works  ───────────────────────── */
+  /* ─────────────────────────  Process — no numbers, slide-in rows  ───────────────────────── */
   .step {
     display: grid;
-    grid-template-columns: minmax(120px, 0.4fr) 1fr auto;
+    grid-template-columns: minmax(220px, 0.9fr) 1.4fr auto;
     align-items: center;
     gap: 40px;
     padding: 48px 0;
     border-top: 1px solid var(--border);
   }
   .step:last-child { border-bottom: 1px solid var(--border); }
-  .step .num { font-size: clamp(48px, 8vw, 96px); font-weight: 600; letter-spacing: -0.05em; color: var(--white); line-height: 0.9; }
-  .step .body h3 { font-size: clamp(24px, 3.4vw, 38px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; }
-  .step .body p { color: var(--mute); font-size: 17px; margin-top: 10px; max-width: 48ch; }
+  .step .name { font-size: clamp(26px, 3.6vw, 44px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; }
+  .step .desc { color: var(--mute); font-size: 17px; max-width: 48ch; }
   .step .meta { font-family: var(--mono); font-size: 13px; color: var(--mute); text-align: right; white-space: nowrap; }
-  .step:hover .num { color: var(--white); }
   @media (max-width: 720px) {
-    .step { grid-template-columns: 1fr; gap: 14px; padding: 36px 0; }
+    .step { grid-template-columns: 1fr; gap: 12px; padding: 36px 0; }
     .step .meta { text-align: left; }
   }
 
-  /* ─────────────────────────  Stats  ───────────────────────── */
+  /* ─────────────────────────  Stats — overflow fixed  ───────────────────────── */
   .stats-band { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); }
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .stat {
+    padding: 56px 24px;
+    min-width: 0;
+    text-align: center;
+    overflow: hidden;
   }
-  .stat { padding: 24px var(--gutter); text-align: center; }
   .stat:not(:last-child) { border-right: 1px solid var(--border); }
-  .stat .val { font-size: clamp(48px, 8vw, 88px); font-weight: 600; letter-spacing: -0.04em; line-height: 1; }
+  .stat .val {
+    font-size: clamp(40px, 6vw, 80px);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
   .stat .val .suffix { color: var(--mute); }
   .stat .key { font-family: var(--mono); font-size: 13px; color: var(--mute); margin-top: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
   @media (max-width: 720px) {
     .stats { grid-template-columns: 1fr; }
     .stat:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat { padding: 40px 24px; }
   }
 
   /* ─────────────────────────  Pricing  ───────────────────────── */
@@ -448,20 +534,22 @@
   footer .links a { font-size: 14px; color: var(--mute); transition: color 0.2s; }
   footer .links a:hover { color: var(--white); }
 
-  /* ─────────────────────────  Scroll reveal  ───────────────────────── */
+  /* ─────────────────────────  Scroll reveal helpers  ───────────────────────── */
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s var(--ease), transform 0.8s var(--ease); }
   .reveal.in { opacity: 1; transform: none; }
   .reveal.d1 { transition-delay: 0.08s; }
   .reveal.d2 { transition-delay: 0.16s; }
-  .reveal.d3 { transition-delay: 0.24s; }
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
     .hero-fallback, .scroll-hint .line { animation: none; }
-    html { scroll-behavior: auto; }
+    .slide .shot { transition: none; }
   }
 </style>
 </head>
 <body>
+
+<!-- ───────────────  NEON CURSOR MOUNT  ─────────────── -->
+<div id="app" aria-hidden="true"></div>
 
 <!-- ───────────────  NAV  ─────────────── -->
 <nav id="nav">
@@ -472,7 +560,7 @@
       <a href="#templates">Templates</a>
       <a href="#process">Process</a>
       <a href="#pricing">Pricing</a>
-      <a href="#contact" class="nav-cta">Get started</a>
+      <a href="#contact" class="nav-cta cta-button">Get started</a>
     </div>
   </div>
 </nav>
@@ -480,17 +568,17 @@
 <!-- ───────────────  HERO  ─────────────── -->
 <header class="hero" id="top">
   <div class="hero-fallback"></div>
-  <canvas id="hero-canvas"></canvas>
+  <canvas id="particle-canvas"></canvas>
   <div class="wrap">
     <span class="hero-badge">
       <span class="dot"></span>
       <span class="eyebrow" style="color:#fff">Now taking new projects</span>
     </span>
-    <h1>Your presence,<br />perfected.</h1>
+    <h1 id="hero-headline">Your presence,<br />perfected.</h1>
     <p class="sub">AI-powered websites, apps and digital tools for professionals.</p>
     <div class="hero-cta">
-      <a href="#templates" class="btn btn-primary">See our work</a>
-      <a href="#contact" class="btn btn-secondary">Get started</a>
+      <span class="eb-wrap"><canvas class="eb-canvas"></canvas><a href="#templates" class="btn btn-primary cta-button">See our work</a></span>
+      <span class="eb-wrap"><canvas class="eb-canvas"></canvas><a href="#contact" class="btn btn-secondary cta-button">Get started</a></span>
     </div>
   </div>
   <div class="scroll-hint">
@@ -500,11 +588,11 @@
 </header>
 
 <!-- ───────────────  BENTO — SERVICES  ─────────────── -->
-<section class="band" id="services">
+<section class="band section" id="services">
   <div class="wrap">
     <div class="section-head reveal">
       <span class="eyebrow">What we build</span>
-      <h2>Everything your<br />presence needs.</h2>
+      <h2>Everything your presence needs.</h2>
       <p>Six productised services, templated for speed and tuned for professionals. Pick what you need — we ship the rest.</p>
     </div>
 
@@ -531,31 +619,29 @@
       <article class="cell chatbot reveal d2">
         <div>
           <h3 class="ttl">AI Chatbot</h3>
-          <p class="desc">Meet Prezi — an AI assistant that answers questions and captures leads around the clock.</p>
+          <p class="desc">Prezi answers questions and captures leads 24/7.</p>
         </div>
         <div class="price">$200</div>
-        <span class="big-mark">AI</span>
       </article>
 
-      <article class="cell booking reveal">
+      <article class="cell booking reveal d2">
         <div>
           <h3 class="ttl">Booking System</h3>
-          <p class="desc">Calendar, reminders and online payments.</p>
+          <p class="desc">Calendar, reminders, payments.</p>
         </div>
         <div class="price">$150</div>
-        <span class="big-mark">B</span>
       </article>
 
-      <article class="cell menu reveal d1">
+      <article class="cell menu reveal">
         <div>
           <h3 class="ttl">Digital Menu</h3>
-          <p class="desc">QR-ready menus that update in seconds.</p>
+          <p class="desc">QR-ready menus that update in seconds — no reprints, no waiting.</p>
         </div>
         <div class="price">$150</div>
         <span class="big-mark">D</span>
       </article>
 
-      <article class="cell seo reveal d2">
+      <article class="cell seo reveal d1">
         <div>
           <h3 class="ttl">Google &amp; SEO</h3>
           <p class="desc">Business Profile setup and search foundations.</p>
@@ -567,8 +653,8 @@
   </div>
 </section>
 
-<!-- ───────────────  TEMPLATE CAROUSEL  ─────────────── -->
-<section class="band carousel-band" id="templates" data-cursor="Explore &rarr;">
+<!-- ───────────────  TEMPLATE GALLERY — DRAGGABLE 3D ARC  ─────────────── -->
+<section class="band section carousel-band" id="templates">
   <div class="wrap">
     <div class="carousel-head reveal">
       <span class="eyebrow">Template gallery</span>
@@ -576,7 +662,7 @@
     </div>
 
     <div class="stage reveal d1">
-      <div class="carousel-3d" id="carousel"></div>
+      <div id="carousel"></div>
     </div>
 
     <div class="carousel-controls reveal d1">
@@ -584,59 +670,51 @@
       <button id="next" aria-label="Next template">&rarr;</button>
     </div>
     <div class="dots" id="dots"></div>
+    <div class="drag-hint">Drag · swipe · scroll sideways</div>
   </div>
 </section>
 
-<!-- ───────────────  HOW IT WORKS  ─────────────── -->
-<section class="band" id="process">
+<!-- ───────────────  HOW IT WORKS — NO NUMBERS  ─────────────── -->
+<section class="band section" id="process">
   <div class="wrap">
     <div class="section-head reveal">
       <span class="eyebrow">How it works</span>
       <h2>Live in three steps.</h2>
     </div>
 
-    <div class="step reveal" data-cursor="Read &rarr;">
-      <div class="num">01</div>
-      <div class="body">
-        <h3>Choose a template</h3>
-        <p>Browse the gallery and pick the design that fits your profession. We adapt it to your brand, content and colours.</p>
-      </div>
+    <div class="step process-step">
+      <div class="name">Choose a template</div>
+      <div class="desc">Browse the gallery and pick the design that fits your profession. We adapt it to your brand, content and colours.</div>
       <div class="meta">Day 0</div>
     </div>
 
-    <div class="step reveal" data-cursor="Read &rarr;">
-      <div class="num">02</div>
-      <div class="body">
-        <h3>Built in 72 hours</h3>
-        <p>Our team and AI tooling build, populate and polish your site, app or tool — fast, without the agency wait.</p>
-      </div>
+    <div class="step process-step">
+      <div class="name">Built in 72 hours</div>
+      <div class="desc">Our team and AI tooling build, populate and polish your site, app or tool — fast, without the agency wait.</div>
       <div class="meta">72 hr build</div>
     </div>
 
-    <div class="step reveal" data-cursor="Read &rarr;">
-      <div class="num">03</div>
-      <div class="body">
-        <h3>Go live</h3>
-        <p>We deploy to your domain, connect analytics and hand over the keys. Updates whenever you need them.</p>
-      </div>
+    <div class="step process-step">
+      <div class="name">Go live</div>
+      <div class="desc">We deploy to your domain, connect analytics and hand over the keys. Updates whenever you need them.</div>
       <div class="meta">Launch day</div>
     </div>
   </div>
 </section>
 
 <!-- ───────────────  STATS  ─────────────── -->
-<section class="stats-band">
+<section class="stats-band section">
   <div class="wrap">
     <div class="stats">
-      <div class="stat reveal">
+      <div class="stat">
         <div class="val"><span class="count" data-to="150">0</span><span class="suffix">+</span></div>
         <div class="key">Websites delivered</div>
       </div>
-      <div class="stat reveal d1">
+      <div class="stat">
         <div class="val"><span class="count" data-to="6">0</span></div>
         <div class="key">Industries served</div>
       </div>
-      <div class="stat reveal d2">
+      <div class="stat">
         <div class="val"><span class="count" data-to="72">0</span><span class="suffix">hr</span></div>
         <div class="key">Average delivery</div>
       </div>
@@ -645,7 +723,7 @@
 </section>
 
 <!-- ───────────────  PRICING  ─────────────── -->
-<section class="band" id="pricing">
+<section class="band section" id="pricing">
   <div class="wrap">
     <div class="section-head reveal">
       <span class="eyebrow">Pricing</span>
@@ -704,14 +782,14 @@
 </section>
 
 <!-- ───────────────  CONTACT  ─────────────── -->
-<section class="band contact-band" id="contact">
+<section class="band section contact-band" id="contact">
   <div class="wrap">
     <span class="eyebrow reveal" style="display:block;margin-bottom:20px">Let's build it</span>
-    <h2 class="reveal">Ready to perfect<br />your presence?</h2>
+    <h2>Ready to perfect your presence?</h2>
     <p class="lead reveal d1">Tell Prezi what you need. We'll scope it, price it and start the 72-hour clock.</p>
     <div class="contact-cta reveal d1">
-      <a href="mailto:hello@prezance.co" class="btn btn-primary">Start a project</a>
-      <a href="#templates" class="btn btn-secondary">Browse templates</a>
+      <span class="eb-wrap"><canvas class="eb-canvas"></canvas><a href="mailto:hello@prezance.co" class="btn btn-primary cta-button">Start a project</a></span>
+      <span class="eb-wrap"><canvas class="eb-canvas"></canvas><a href="#templates" class="btn btn-secondary cta-button">Browse templates</a></span>
     </div>
 
     <div id="typebot-container" class="reveal d2">
@@ -740,43 +818,9 @@
 <div id="spotlight" aria-hidden="true"></div>
 <div id="cursor-label" aria-hidden="true"></div>
 
-<!-- ───────────────  WAVE HERO  ─────────────── -->
-<script type="module">
-  import { WaveGradient } from "./wave-gradient.js";
-  const canvas = document.getElementById("hero-canvas");
-  const fallback = document.querySelector(".hero-fallback");
-  function initWave() {
-    try {
-      // canvas needs measured size before init
-      if (!canvas.clientWidth || !canvas.clientHeight) return;
-      new WaveGradient(canvas, {
-        colors: ["#000000", "#0a0a0a", "#111111", "#1a1a1a"],
-        amplitude: 380,
-        density: [0.045, 0.12],
-        speed: 1.8,
-        seed: 7,
-        fps: 30
-      });
-      if (fallback) fallback.style.display = "none";
-    } catch (e) {
-      // WebGL2 unavailable — CSS fallback stays visible
-      canvas.style.display = "none";
-      console.warn("Wave gradient unavailable, using CSS fallback:", e);
-    }
-  }
-  // ensure layout is measured
-  if (document.readyState === "complete") initWave();
-  else window.addEventListener("load", initWave);
-</script>
-
-<!-- ───────────────  LIBRARIES (CDN, no build step)  ─────────────── -->
-<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
-
-<!-- ───────────────  INTERACTIONS  ─────────────── -->
+<!-- ───────────────  MAIN SCRIPT  ─────────────── -->
 <script>
+(() => {
   /* Capability detection — effects degrade gracefully */
   const isTouch = window.matchMedia("(hover: none)").matches;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -789,20 +833,19 @@
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
 
-  /* ───── Lenis smooth scroll ───── */
+  /* ═════════ SECTION 3 — Lenis smooth scroll + GSAP wiring ═════════ */
   let lenis = null;
   if (window.Lenis && !reduced) {
     lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
     if (hasGSAP) {
       lenis.on("scroll", ScrollTrigger.update);
-      gsap.ticker.add((t) => lenis.raf(t * 1000));
+      gsap.ticker.add((time) => lenis.raf(time * 1000));
       gsap.ticker.lagSmoothing(0);
     } else {
-      const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); };
+      const raf = (time) => { lenis.raf(time); requestAnimationFrame(raf); };
       requestAnimationFrame(raf);
     }
   }
-  /* Anchor links route through Lenis (CSS smooth-scroll removed) */
   document.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener("click", (e) => {
       const t = document.querySelector(a.getAttribute("href"));
@@ -813,14 +856,27 @@
     });
   });
 
-  /* ───── Scroll reveals (ScrollTrigger, IO fallback) ───── */
+  /* Section fade-ups + inner reveals */
   if (reduced) {
     document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
   } else if (hasGSAP) {
+    gsap.utils.toArray(".section").forEach((sec) => {
+      gsap.from(sec, {
+        opacity: 0, y: 60, duration: 0.8,
+        scrollTrigger: { trigger: sec, start: "top 80%", once: true }
+      });
+    });
     ScrollTrigger.batch(".reveal", {
       start: "top 88%",
       once: true,
       onEnter: (els) => els.forEach((el) => el.classList.add("in"))
+    });
+    /* SECTION 9 — process rows slide in from the left */
+    gsap.utils.toArray(".step").forEach((row) => {
+      gsap.from(row, {
+        x: -60, opacity: 0, duration: 0.8, ease: "power3.out",
+        scrollTrigger: { trigger: row, start: "top 85%", once: true }
+      });
     });
   } else {
     const revObs = new IntersectionObserver((entries) => {
@@ -831,74 +887,434 @@
     document.querySelectorAll(".reveal").forEach((el) => revObs.observe(el));
   }
 
-  /* ───── Clip-path diagonal wipes on section headings ───── */
-  if (hasGSAP && !reduced) {
-    gsap.utils.toArray(".section-head, .carousel-head").forEach((el) => {
-      el.classList.add("in"); // visibility handed to clipPath
-      gsap.fromTo(el,
-        { clipPath: "polygon(0 0, 0 0, -30% 100%, -30% 100%)" },
-        {
-          clipPath: "polygon(0 0, 130% 0, 100% 100%, 0 100%)",
-          duration: 1.2,
-          ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 82%", once: true }
+  /* SplitText word reveals on ALL section headings (after fonts so metrics are right) */
+  function splitHeadings() {
+    if (!hasGSAP || !window.SplitText || reduced) return;
+    document.querySelectorAll(".section-head h2, .carousel-head h2, .contact-band h2").forEach((h) => {
+      try {
+        const split = new SplitText(h, { type: "words", wordsClass: "word" });
+        gsap.from(split.words, {
+          opacity: 0, y: 40, duration: 0.7, ease: "power3.out", stagger: 0.05,
+          scrollTrigger: { trigger: h, start: "top 85%", once: true }
         });
+      } catch (e) { /* heading stays visible un-split */ }
     });
   }
 
-  /* ───── Parallax on stats ───── */
-  if (hasGSAP && !reduced && !isTouch) {
-    gsap.utils.toArray(".stat .val").forEach((el, i) => {
-      const amp = 26 + i * 14;
-      gsap.fromTo(el, { y: amp }, {
-        y: -amp,
-        ease: "none",
-        scrollTrigger: { trigger: ".stats-band", start: "top bottom", end: "bottom top", scrub: true }
+  /* ═════════ SECTION 2 — Three.js particle text hero ═════════ */
+  const heroEl = document.querySelector(".hero");
+  const pCanvas = document.getElementById("particle-canvas");
+  function initParticles() {
+    if (!window.THREE) return;
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas: pCanvas, alpha: true, antialias: false });
+    } catch (e) {
+      pCanvas.style.display = "none";
+      console.warn("particle hero unavailable:", e);
+      return;
+    }
+    const COUNT = isTouch ? 3500 : 8000;
+    const scene = new THREE.Scene();
+    let W = heroEl.clientWidth, H = heroEl.clientHeight;
+    const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0.1, 10);
+    camera.position.z = 1;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H, false);
+
+    // sample "PREZANCE" pixels from an offscreen 2D canvas
+    function sampleText() {
+      const off = document.createElement("canvas");
+      off.width = W; off.height = H;
+      const ctx = off.getContext("2d");
+      const fs = Math.min(W / 6.8, 190);
+      ctx.fillStyle = "#fff";
+      ctx.font = `700 ${fs}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      // narrow screens: drop below the headline/CTAs so text stays readable
+      ctx.fillText("PREZANCE", W / 2, W < 720 ? H * 0.8 : H * 0.45);
+      const data = ctx.getImageData(0, 0, W, H).data;
+      const pts = [];
+      const step = 2;
+      for (let y = 0; y < H; y += step) {
+        for (let x = 0; x < W; x += step) {
+          if (data[(y * W + x) * 4 + 3] > 128) pts.push([x - W / 2, -(y - H / 2)]);
+        }
+      }
+      return pts;
+    }
+
+    const positions = new Float32Array(COUNT * 3);
+    const colors = new Float32Array(COUNT * 3);
+    const targets = new Float32Array(COUNT * 2);
+    const scatter = new Float32Array(COUNT * 2);
+    const phase = new Float32Array(COUNT);
+
+    function assignTargets() {
+      const pts = sampleText();
+      if (!pts.length) return;
+      for (let i = 0; i < COUNT; i++) {
+        const p = pts[(Math.random() * pts.length) | 0];
+        targets[i * 2] = p[0] + (Math.random() - 0.5) * 1.5;
+        targets[i * 2 + 1] = p[1] + (Math.random() - 0.5) * 1.5;
+      }
+    }
+    for (let i = 0; i < COUNT; i++) {
+      scatter[i * 2] = (Math.random() - 0.5) * W * 1.2;
+      scatter[i * 2 + 1] = (Math.random() - 0.5) * H * 1.2;
+      positions[i * 3] = scatter[i * 2];
+      positions[i * 3 + 1] = scatter[i * 2 + 1];
+      positions[i * 3 + 2] = 0;
+      phase[i] = Math.random() * Math.PI * 2;
+      const b = 0.55 + Math.random() * 0.45; // slight opacity variation via brightness
+      colors[i * 3] = b; colors[i * 3 + 1] = b; colors[i * 3 + 2] = b;
+    }
+    assignTargets();
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    const mat = new THREE.PointsMaterial({
+      size: 1.5,
+      sizeAttenuation: false,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: false,
+      blending: THREE.AdditiveBlending
+    });
+    scene.add(new THREE.Points(geo, mat));
+
+    // cursor repel state (world coords)
+    let mx = 1e9, my = 1e9;
+    if (!isTouch) {
+      heroEl.addEventListener("pointermove", (e) => {
+        const r = pCanvas.getBoundingClientRect();
+        mx = e.clientX - r.left - W / 2;
+        my = -(e.clientY - r.top - H / 2);
+      }, { passive: true });
+      heroEl.addEventListener("pointerleave", () => { mx = 1e9; my = 1e9; });
+    }
+
+    const assembleStart = performance.now() + 300;
+    const DURATION = 2500;
+    let heroVisible = true;
+    new IntersectionObserver((en) => { heroVisible = en[0].isIntersecting; }).observe(heroEl);
+
+    function frame(now) {
+      requestAnimationFrame(frame);
+      if (!heroVisible) return;
+      let t = Math.min(Math.max((now - assembleStart) / DURATION, 0), 1);
+      t = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      if (reduced) t = 1;
+      const time = now * 0.0012;
+      const arr = geo.attributes.position.array;
+      for (let i = 0; i < COUNT; i++) {
+        const tx = targets[i * 2], ty = targets[i * 2 + 1];
+        // scatter → text lerp, then continuous ±3px drift
+        let bx = scatter[i * 2] + (tx - scatter[i * 2]) * t;
+        let by = scatter[i * 2 + 1] + (ty - scatter[i * 2 + 1]) * t;
+        if (!reduced) {
+          bx += Math.sin(time + phase[i]) * 3 * t;
+          by += Math.cos(time * 1.3 + phase[i]) * 3 * t;
+        }
+        // repel within 80px of cursor
+        const dx = bx - mx, dy = by - my;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 6400 && d2 > 0.01) {
+          const d = Math.sqrt(d2);
+          const f = (80 - d) / 80;
+          bx += (dx / d) * f * 42;
+          by += (dy / d) * f * 42;
+        }
+        // smooth toward computed point (eases both repel and snap-back)
+        arr[i * 3] += (bx - arr[i * 3]) * 0.16;
+        arr[i * 3 + 1] += (by - arr[i * 3 + 1]) * 0.16;
+      }
+      geo.attributes.position.needsUpdate = true;
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(frame);
+
+    let rsT;
+    window.addEventListener("resize", () => {
+      clearTimeout(rsT);
+      rsT = setTimeout(() => {
+        W = heroEl.clientWidth; H = heroEl.clientHeight;
+        camera.left = -W / 2; camera.right = W / 2; camera.top = H / 2; camera.bottom = -H / 2;
+        camera.updateProjectionMatrix();
+        renderer.setSize(W, H, false);
+        assignTargets();
+      }, 200);
+    });
+  }
+
+  /* Chromatic aberration on the hero headline (lerped) */
+  const h1 = document.getElementById("hero-headline");
+  if (!isTouch && !reduced && h1) {
+    let target = 0, current = 0, active = false;
+    heroEl.addEventListener("pointermove", (e) => {
+      target = e.clientX - window.innerWidth / 2;
+      active = true;
+    }, { passive: true });
+    heroEl.addEventListener("pointerleave", () => { target = 0; });
+    (function chroma() {
+      requestAnimationFrame(chroma);
+      if (!active) return;
+      current += (target - current) * 0.08;
+      const o = current * 0.05;
+      h1.style.textShadow = `${o}px 0 0 rgba(255,0,0,0.4), ${-o}px 0 0 rgba(0,255,255,0.4)`;
+      if (Math.abs(current) < 0.05 && target === 0) { h1.style.textShadow = "none"; active = false; }
+    })();
+  }
+
+  /* ═════════ SECTION 6 — ElectricBorder (pure canvas, fBm noise) ═════════ */
+  class ElectricBorder {
+    constructor(canvas, options = {}) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext("2d");
+      this.width = options.width || 200;
+      this.height = options.height || 50;
+      this.octaves = options.octaves || 8;
+      this.lacunarity = options.lacunarity || 1.6;
+      this.gain = options.gain || 0.6;
+      this.amplitude = options.amplitude || 0.15;
+      this.frequency = options.frequency || 8;
+      this.displacement = options.displacement || 8;
+      this.speed = options.speed || 1.2;
+      this.borderOffset = options.borderOffset || 4;
+      this.borderRadius = options.borderRadius || 25;
+      this.lineWidth = options.lineWidth || 1;
+      this.color = options.color || "rgba(255,255,255,0.6)";
+      this.time = Math.random() * 100;
+      this.visible = true;
+      this.canvas.width = this.width;
+      this.canvas.height = this.height;
+      // per-instance noise table
+      this.tbl = new Float32Array(256);
+      for (let i = 0; i < 256; i++) this.tbl[i] = Math.random();
+    }
+    noise(x) {
+      const i = Math.floor(x), f = x - i;
+      const u = f * f * (3 - 2 * f);
+      const a = this.tbl[i & 255], b = this.tbl[(i + 1) & 255];
+      return a + (b - a) * u;
+    }
+    fbm(x) {
+      let v = 0, a = this.amplitude, fr = 1;
+      for (let o = 0; o < this.octaves; o++) {
+        v += a * (this.noise(x * fr) * 2 - 1);
+        fr *= this.lacunarity;
+        a *= this.gain;
+      }
+      return v;
+    }
+    /* point + outward normal on a rounded-rect perimeter, t ∈ [0,1) */
+    pointAt(t) {
+      const o = this.borderOffset + this.displacement + 6;
+      const w = this.width - o * 2, h = this.height - o * 2;
+      const r = Math.min(this.borderRadius, h / 2, w / 2);
+      const sw = w - 2 * r, sh = h - 2 * r, arc = (Math.PI * r) / 2;
+      const P = 2 * sw + 2 * sh + 4 * arc;
+      let d = t * P;
+      const x0 = o, y0 = o;
+      if (d < sw) return [x0 + r + d, y0, 0, -1];
+      d -= sw;
+      if (d < arc) { const a = -Math.PI / 2 + d / r; return [x0 + r + sw + Math.cos(a) * r, y0 + r + Math.sin(a) * r, Math.cos(a), Math.sin(a)]; }
+      d -= arc;
+      if (d < sh) return [x0 + w, y0 + r + d, 1, 0];
+      d -= sh;
+      if (d < arc) { const a = d / r; return [x0 + r + sw + Math.cos(a) * r, y0 + r + sh + Math.sin(a) * r, Math.cos(a), Math.sin(a)]; }
+      d -= arc;
+      if (d < sw) return [x0 + r + sw - d, y0 + h, 0, 1];
+      d -= sw;
+      if (d < arc) { const a = Math.PI / 2 + d / r; return [x0 + r + Math.cos(a) * r, y0 + r + sh + Math.sin(a) * r, Math.cos(a), Math.sin(a)]; }
+      d -= arc;
+      if (d < sh) return [x0, y0 + r + sh - d, -1, 0];
+      d -= sh;
+      const a = Math.PI + d / r;
+      return [x0 + r + Math.cos(a) * r, y0 + r + Math.sin(a) * r, Math.cos(a), Math.sin(a)];
+    }
+    draw(dt) {
+      this.time += dt * this.speed;
+      const ctx = this.ctx;
+      ctx.clearRect(0, 0, this.width, this.height);
+      const SAMPLES = 160;
+      ctx.beginPath();
+      for (let s = 0; s <= SAMPLES; s++) {
+        const t = (s % SAMPLES) / SAMPLES;
+        const [x, y, nx, ny] = this.pointAt(t);
+        const n = this.fbm(t * this.frequency + this.time) / this.amplitude; // normalised ±~1
+        const px = x + nx * n * this.displacement;
+        const py = y + ny * n * this.displacement;
+        s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      // glow pass + crisp pass (electric look)
+      ctx.lineWidth = this.lineWidth * 2.5;
+      ctx.strokeStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 8;
+      ctx.globalAlpha = 0.45;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = this.lineWidth;
+      ctx.stroke();
+    }
+  }
+
+  const ebInstances = [];
+  function setupElectricBorders() {
+    /* CTA buttons — canvas covers the button with overflow for the arcs */
+    document.querySelectorAll(".eb-wrap").forEach((wrap) => {
+      const btn = wrap.querySelector(".cta-button");
+      const canvas = wrap.querySelector(".eb-canvas");
+      if (!btn || !canvas) return;
+      const pad = 26;
+      const eb = new ElectricBorder(canvas, {
+        width: btn.offsetWidth + pad * 2,
+        height: btn.offsetHeight + pad * 2,
+        borderRadius: btn.offsetHeight / 2 + 4,
+        borderOffset: 4,
+        displacement: 8,
+        speed: 1.2,
+        color: "rgba(255,255,255,0.6)"
       });
+      btn.addEventListener("pointerenter", () => { eb.speed = 2.5; eb.displacement = 15; });
+      btn.addEventListener("pointerleave", () => { eb.speed = 1.2; eb.displacement = 8; });
+      ebInstances.push({ eb, el: wrap });
+    });
+    /* Template cards — dim #333 border inside each slide, intensifies on hover */
+    document.querySelectorAll(".slide").forEach((slide) => {
+      const canvas = document.createElement("canvas");
+      canvas.className = "eb-slide";
+      slide.appendChild(canvas);
+      const eb = new ElectricBorder(canvas, {
+        width: slide.offsetWidth,
+        height: slide.offsetHeight,
+        borderRadius: 14,
+        borderOffset: 2,
+        displacement: 5,
+        speed: 0.8,
+        color: "rgba(120,120,120,0.7)" /* #333-family, visible over dark card */
+      });
+      slide.addEventListener("pointerenter", () => { eb.speed = 2.2; eb.displacement = 10; eb.color = "rgba(255,255,255,0.55)"; });
+      slide.addEventListener("pointerleave", () => { eb.speed = 0.8; eb.displacement = 5; eb.color = "rgba(120,120,120,0.7)"; });
+      ebInstances.push({ eb, el: slide });
+    });
+    /* visibility-gated shared loop @30fps */
+    const vis = new WeakMap();
+    const io = new IntersectionObserver((en) => en.forEach((e) => vis.set(e.target, e.isIntersecting)));
+    ebInstances.forEach(({ el }) => { vis.set(el, false); io.observe(el); });
+    if (reduced) { ebInstances.forEach(({ eb }) => eb.draw(0)); return; }
+    let last = performance.now();
+    (function loop(now) {
+      requestAnimationFrame(loop);
+      const dt = now - last;
+      if (dt < 33) return;
+      last = now;
+      ebInstances.forEach(({ eb, el }) => { if (vis.get(el)) eb.draw(dt * 0.001); });
+    })(last);
+  }
+
+  /* ═════════ SECTION 4 — cursor spotlight / text swap / magnetic ═════════ */
+  if (!isTouch) {
+    const spot = document.getElementById("spotlight");
+    const label = document.getElementById("cursor-label");
+    const cursorMap = [
+      [".template-card", "Explore →"],
+      [".cta-button", "Start →"],
+      [".process-step", "Read →"]
+    ];
+    const magnets = [...document.querySelectorAll(".cta-button")].map((b) => ({
+      el: b,
+      qx: hasGSAP ? gsap.quickTo(b, "x", { duration: 0.3, ease: "power3" }) : null,
+      qy: hasGSAP ? gsap.quickTo(b, "y", { duration: 0.3, ease: "power3" }) : null,
+      pulled: false
+    }));
+
+    window.addEventListener("mousemove", (e) => {
+      /* spotlight */
+      spot.style.background = `radial-gradient(circle 300px at ${e.clientX}px ${e.clientY}px, rgba(255,255,255,0.04), transparent)`;
+      spot.classList.add("on");
+
+      /* label swap */
+      label.style.left = e.clientX + "px";
+      label.style.top = e.clientY + "px";
+      let text = null;
+      if (e.target instanceof Element) {
+        for (const [sel, txt] of cursorMap) {
+          if (e.target.closest(sel)) { text = txt; break; }
+        }
+      }
+      if (text) { label.textContent = text; label.classList.add("on"); }
+      else label.classList.remove("on");
+
+      /* magnetic — within 60px of edge, pull 30% toward cursor */
+      if (!reduced && hasGSAP) {
+        magnets.forEach((m) => {
+          const r = m.el.getBoundingClientRect();
+          const dx = e.clientX - (r.left + r.width / 2);
+          const dy = e.clientY - (r.top + r.height / 2);
+          const ex = Math.max(Math.abs(dx) - r.width / 2, 0);
+          const ey = Math.max(Math.abs(dy) - r.height / 2, 0);
+          const d = Math.hypot(ex, ey);
+          if (d < 60) {
+            m.qx(dx * 0.3 * (1 - d / 60));
+            m.qy(dy * 0.3 * (1 - d / 60));
+            m.pulled = true;
+          } else if (m.pulled) {
+            m.qx(0); m.qy(0); m.pulled = false;
+          }
+        });
+      }
+    }, { passive: true });
+    document.documentElement.addEventListener("mouseleave", () => {
+      spot.classList.remove("on");
+      label.classList.remove("on");
+      magnets.forEach((m) => { if (m.pulled) { m.qx && m.qx(0); m.qy && m.qy(0); m.pulled = false; } });
     });
   }
 
-  /* ───── Animated stat counters (0.8s) ───── */
+  /* ═════════ SECTION 8 — stats counters (0.8s, once) ═════════ */
   const countObs = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (!e.isIntersecting) return;
       const el = e.target;
       const to = parseInt(el.dataset.to, 10);
-      if (reduced) { el.textContent = to; countObs.unobserve(el); return; }
-      const dur = 800;
+      countObs.unobserve(el);
+      if (reduced) { el.textContent = to; return; }
       const start = performance.now();
       const tick = (now) => {
-        const p = Math.min((now - start) / dur, 1);
-        const eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = Math.round(eased * to).toString();
+        const p = Math.min((now - start) / 800, 1);
+        el.textContent = Math.round((1 - Math.pow(1 - p, 3)) * to).toString();
         if (p < 1) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
-      countObs.unobserve(el);
     });
   }, { threshold: 0.5 });
   document.querySelectorAll(".count").forEach((c) => countObs.observe(c));
 
-  /* ───── 3D Template carousel ───── */
-  const templates = [
+  /* ═════════ SECTION 7 — template gallery: draggable 3D arc ═════════ */
+  const templatesData = [
     { name: "Novena", cat: "Clinical authority", a: "#0b1f3a", b: "#1a4a7a" },
     { name: "Medic", cat: "Warm & elegant", a: "#2a1810", b: "#7a4a2a" },
     { name: "MediLab", cat: "Modern minimal", a: "#0a1a18", b: "#1a6a5a" },
-    { name: "Lex", cat: "Legal & corporate", a: "#1a1a22", b: "#3a3a5a" },
     { name: "Savor", cat: "Restaurant", a: "#2a1014", b: "#7a2a3a" },
-    { name: "Vital", cat: "Fitness & wellness", a: "#101a0a", b: "#3a6a1a" }
+    { name: "Vital", cat: "Fitness & wellness", a: "#101a0a", b: "#3a6a1a" },
+    { name: "Lex", cat: "Legal & corporate", a: "#1a1a22", b: "#3a3a5a" }
   ];
   const carousel = document.getElementById("carousel");
   const dotsWrap = document.getElementById("dots");
-  const N = templates.length;
-  const theta = 360 / N;
-  // radius so panels don't overlap
-  const radius = Math.round((320 / 2) / Math.tan(Math.PI / N)) + 60;
+  const stage = document.querySelector(".stage");
+  const N = templatesData.length;
+  const slides = [];
 
-  templates.forEach((t, i) => {
+  templatesData.forEach((t, i) => {
     const slide = document.createElement("div");
-    slide.className = "slide";
-    slide.style.transform = `rotateY(${i * theta}deg) translateZ(${radius}px)`;
+    slide.className = "slide template-card";
     slide.innerHTML = `
       <div class="shot">
         <div class="bar"><i></i><i></i><i></i></div>
@@ -911,152 +1327,103 @@
         </div>
       </div>`;
     carousel.appendChild(slide);
-
+    slides.push(slide);
     const dot = document.createElement("i");
     if (i === 0) dot.className = "on";
-    dot.addEventListener("click", () => { current = i; render(); });
+    dot.addEventListener("click", () => snapTo(nearestIndexTarget(i)));
     dotsWrap.appendChild(dot);
   });
 
-  let current = 0;
-  let scrollRot = 0; // extra rotation driven by pinned scroll scrub
-  function render() {
-    carousel.style.transform = `translate(-50%, -50%) translateZ(-${radius}px) rotateY(${-current * theta - scrollRot}deg)`;
-    const active = ((Math.round(current + scrollRot / theta) % N) + N) % N;
+  const state = { pos: 0 };
+  let SPACING = 340;
+  function calcSpacing() { SPACING = Math.min(340, stage.clientWidth * 0.42); }
+  calcSpacing();
+
+  function layout() {
+    for (let i = 0; i < N; i++) {
+      let off = i - state.pos;
+      off = ((off % N) + N) % N;
+      if (off > N / 2) off -= N;
+      const x = off * SPACING;
+      const ry = Math.max(-25, Math.min(25, -off * 25));
+      const z = -Math.abs(off) * 150;
+      const op = Math.abs(off) > 2.2 ? 0 : 1 - Math.abs(off) * 0.22;
+      const s = slides[i];
+      s.style.transform = `translate(-50%, -50%) translate3d(${x.toFixed(1)}px, 0, ${z.toFixed(1)}px) rotateY(${ry.toFixed(2)}deg)`;
+      s.style.zIndex = String(100 - Math.round(Math.abs(off) * 10));
+      s.style.opacity = op.toFixed(2);
+      s.style.pointerEvents = Math.abs(off) > 1.6 ? "none" : "auto";
+    }
+    const active = ((Math.round(state.pos) % N) + N) % N;
     [...dotsWrap.children].forEach((d, i) => d.classList.toggle("on", i === active));
   }
-  render();
+  layout();
 
-  document.getElementById("next").addEventListener("click", () => { current++; render(); resetAuto(); });
-  document.getElementById("prev").addEventListener("click", () => { current--; render(); resetAuto(); });
-
-  /* Desktop: pinned gallery — scroll scrubs a full revolution. Touch: auto-rotate. */
-  let auto = null;
-  function startAuto() { if (!auto) auto = setInterval(() => { current++; render(); }, 3500); }
-  function resetAuto() { if (auto) { clearInterval(auto); auto = null; startAuto(); } }
-  if (hasGSAP && !isTouch && !reduced) {
-    ScrollTrigger.create({
-      trigger: "#templates",
-      start: "top top",
-      end: "+=120%",
-      pin: true,
-      scrub: 0.6,
-      onUpdate(self) { scrollRot = self.progress * 360; render(); }
-    });
-  } else if (!reduced) {
-    startAuto();
-    const stage = document.querySelector(".stage");
-    stage.addEventListener("mouseenter", () => { clearInterval(auto); auto = null; });
-    stage.addEventListener("mouseleave", startAuto);
+  function nearestIndexTarget(i) {
+    // shortest path from current pos to index i (carousel wraps)
+    const base = Math.round(state.pos);
+    let delta = (i - ((base % N) + N) % N);
+    if (delta > N / 2) delta -= N;
+    if (delta < -N / 2) delta += N;
+    return base + delta;
   }
-
-  /* ───── Hero headline: SplitText words + text scramble (500ms after load) ───── */
-  const SCRAMBLE_CHARS = "!<>-_\\/[]{}=+*^?#ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  function scramble(node, finalText, duration) {
-    const len = finalText.length;
-    const start = performance.now();
-    (function tick(now) {
-      const p = Math.min((now - start) / duration, 1);
-      const settled = Math.floor(p * len);
-      let out = "";
-      for (let i = 0; i < len; i++) {
-        const ch = finalText[i];
-        out += (i < settled || ch === " " || ch === ",") ? ch : SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0];
-      }
-      node.textContent = out;
-      if (p < 1) requestAnimationFrame(tick);
-      else node.textContent = finalText;
-    })(performance.now());
-  }
-  const h1 = document.querySelector(".hero h1");
-  function heroIntro() {
-    let words = null;
-    if (hasGSAP && window.SplitText) {
-      try { words = new SplitText(h1, { type: "words", wordsClass: "w" }).words; } catch (e) { words = null; }
-    }
-    if (words && words.length) {
-      gsap.set(words, { opacity: 0, yPercent: 40 });
-      setTimeout(() => {
-        words.forEach((w, i) => {
-          const final = w.textContent;
-          gsap.to(w, { opacity: 1, yPercent: 0, duration: 0.6, ease: "power3.out", delay: i * 0.12 });
-          setTimeout(() => scramble(w, final, 700), i * 120);
-        });
-      }, 500);
+  let snapTween = null;
+  function snapTo(target) {
+    if (hasGSAP && !reduced) {
+      snapTween && snapTween.kill();
+      snapTween = gsap.to(state, { pos: target, duration: 0.65, ease: "power3.out", onUpdate: layout });
     } else {
-      // no SplitText — scramble the raw text nodes (preserves the <br>)
-      const nodes = [...h1.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim());
-      setTimeout(() => nodes.forEach((n) => scramble(n, n.textContent, 900)), 500);
+      state.pos = target; layout();
     }
   }
-  if (!reduced && h1) {
-    // split only after webfonts load so word metrics are correct
-    if (document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(heroIntro);
-    else heroIntro();
+  document.getElementById("next").addEventListener("click", () => snapTo(Math.round(state.pos) + 1));
+  document.getElementById("prev").addEventListener("click", () => snapTo(Math.round(state.pos) - 1));
+
+  /* drag (mouse + touch swipe via pointer events) */
+  let dragging = false, dragStartX = 0, dragStartPos = 0, dragMoved = 0;
+  stage.addEventListener("pointerdown", (e) => {
+    dragging = true; dragMoved = 0;
+    dragStartX = e.clientX; dragStartPos = state.pos;
+    snapTween && snapTween.kill();
+    stage.classList.add("dragging");
+  });
+  window.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - dragStartX;
+    dragMoved = Math.max(dragMoved, Math.abs(dx));
+    state.pos = dragStartPos - dx / SPACING;
+    layout();
+  }, { passive: true });
+  window.addEventListener("pointerup", () => {
+    if (!dragging) return;
+    dragging = false;
+    stage.classList.remove("dragging");
+    snapTo(Math.round(state.pos));
+  });
+  /* suppress accidental click after a drag */
+  stage.addEventListener("click", (e) => { if (dragMoved > 8) { e.stopPropagation(); e.preventDefault(); } }, true);
+  /* trackpad horizontal scroll rotates the carousel */
+  let wheelT;
+  stage.addEventListener("wheel", (e) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical scroll passes through
+    e.preventDefault();
+    state.pos += e.deltaX / 500;
+    layout();
+    clearTimeout(wheelT);
+    wheelT = setTimeout(() => snapTo(Math.round(state.pos)), 150);
+  }, { passive: false });
+
+  window.addEventListener("resize", () => { calcSpacing(); layout(); });
+
+  /* ═════════ boot order: fonts → headings split, particles, electric borders ═════════ */
+  function boot() {
+    splitHeadings();
+    initParticles();
+    setupElectricBorders();
   }
-
-  /* ───── Pointer effects — desktop only ───── */
-  if (!isTouch) {
-    /* Cursor spotlight */
-    const spot = document.getElementById("spotlight");
-    /* Cursor text swap label */
-    const label = document.getElementById("cursor-label");
-    document.querySelectorAll(".btn, .nav-cta").forEach((el) => {
-      if (!el.dataset.cursor) el.dataset.cursor = "Start →";
-    });
-    /* Magnetic buttons */
-    const mags = [...document.querySelectorAll(".btn, .nav-cta")];
-
-    window.addEventListener("mousemove", (e) => {
-      /* spotlight follows */
-      spot.style.setProperty("--mx", e.clientX + "px");
-      spot.style.setProperty("--my", e.clientY + "px");
-      spot.classList.add("on");
-
-      /* label follows + swaps per section */
-      label.style.left = e.clientX + "px";
-      label.style.top = e.clientY + "px";
-      const tgt = e.target instanceof Element ? e.target.closest("[data-cursor]") : null;
-      if (tgt) { label.textContent = tgt.dataset.cursor; label.classList.add("on"); }
-      else label.classList.remove("on");
-
-      /* magnetic attraction within 60px of button edge */
-      if (!reduced) {
-        mags.forEach((b) => {
-          const r = b.getBoundingClientRect();
-          const dx = e.clientX - (r.left + r.width / 2);
-          const dy = e.clientY - (r.top + r.height / 2);
-          const ex = Math.max(Math.abs(dx) - r.width / 2, 0);
-          const ey = Math.max(Math.abs(dy) - r.height / 2, 0);
-          const d = Math.hypot(ex, ey);
-          if (d < 60) {
-            const pull = 1 - d / 60;
-            b.style.transform = `translate(${(dx * 0.18 * pull).toFixed(1)}px, ${(dy * 0.18 * pull).toFixed(1)}px)`;
-          } else if (b.style.transform) {
-            b.style.transform = "";
-          }
-        });
-      }
-    }, { passive: true });
-    document.documentElement.addEventListener("mouseleave", () => {
-      spot.classList.remove("on");
-      label.classList.remove("on");
-    });
-
-    /* 3D tilt on template cards (composed onto carousel transform) */
-    if (!reduced) {
-      document.querySelectorAll(".slide").forEach((s) => {
-        const base = s.style.transform;
-        s.addEventListener("pointermove", (e) => {
-          const r = s.getBoundingClientRect();
-          const px = (e.clientX - r.left) / r.width - 0.5;
-          const py = (e.clientY - r.top) / r.height - 0.5;
-          s.style.transform = `${base} rotateX(${(-py * 15).toFixed(2)}deg) rotateY(${(px * 15).toFixed(2)}deg)`;
-        });
-        s.addEventListener("pointerleave", () => { s.style.transform = base; });
-      });
-    }
-  }
+  if (document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(boot);
+  else boot();
+})();
 </script>
 
 </body>
