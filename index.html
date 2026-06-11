@@ -13,50 +13,17 @@
 <!-- Three.js (global build, powers the hero particle text) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-<!-- GSAP + plugins — 3.13.0: SplitText is only in the free npm package from 3.13 (3.12.5 URL 404s) -->
+<!-- GSAP + plugins — 3.13.0: SplitText/ScrollToPlugin are in the free npm package from 3.13 -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollToPlugin.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+
+<!-- imagesLoaded (Codrops carousel preload dependency) -->
+<script src="https://unpkg.com/imagesloaded@5.0.0/imagesloaded.pkgd.min.js"></script>
 
 <!-- Lenis smooth scroll -->
 <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
-
-<!-- threejs-toys neon cursor (module = deferred; #app exists by execution time).
-     Its WebGL canvas is opaque black (alpha:false), so it's mounted as a fixed
-     overlay with mix-blend-mode:screen and pointer events are forwarded to it. -->
-<script type="module">
-  const isTouch = window.matchMedia("(hover: none)").matches;
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const wideEnough = window.matchMedia("(min-width: 720px)").matches; // idle trail overwhelms tiny viewports
-  if (!isTouch && !reduced && wideEnough) {
-    try {
-      const { neonCursor } = await import("https://unpkg.com/threejs-toys@0.0.8/build/threejs-toys.module.cdn.min.js");
-      const app = document.getElementById("app");
-      neonCursor({
-        el: app,
-        shaderPoints: 16,
-        curvePoints: 80,
-        curveLerp: 0.5,
-        radius1: 5,
-        radius2: 30,
-        velocityTreshold: 10,
-        sleepRadiusX: 100,
-        sleepRadiusY: 100,
-        sleepTimeCoefX: 0.0025,
-        sleepTimeCoefY: 0.0025
-      });
-      // #app is pointer-events:none, so real events never hit it — forward from window
-      const fwd = (type) => (e) =>
-        app.dispatchEvent(new PointerEvent(type, { clientX: e.clientX, clientY: e.clientY, bubbles: false }));
-      app.dispatchEvent(new PointerEvent("pointerenter", { clientX: innerWidth / 2, clientY: innerHeight / 2 }));
-      window.addEventListener("pointermove", fwd("pointermove"), { passive: true });
-      window.addEventListener("pointerdown", fwd("pointerdown"), { passive: true });
-      window.addEventListener("pointerup", fwd("pointerup"), { passive: true });
-    } catch (e) {
-      console.warn("neon cursor unavailable:", e);
-    }
-  }
-</script>
 
 <style>
   /* ─────────────────────────  Tokens  ───────────────────────── */
@@ -64,6 +31,7 @@
     --black: #000000;
     --white: #ffffff;
     --mute: #888888;
+    --label: #666666;
     --border: #333333;
     --surface: #0a0a0a;
     --surface-2: #111111;
@@ -72,6 +40,7 @@
     --gutter: 24px;
     --max: 1200px;
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --border-radius: 8px; /* Codrops card radius token */
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -99,25 +68,6 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 128px 128px;
-  }
-
-  /* ───── Neon cursor overlay (threejs-toys) ───── */
-  #app {
-    position: fixed;
-    inset: 0;
-    z-index: 70;
-    pointer-events: none;
-    /* blend the whole overlay (it's a stacking context) with the page:
-       the opaque-black WebGL canvas becomes additive glow */
-    mix-blend-mode: screen;
-  }
-  #app canvas {
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-    /* crush the shader's 1/dist ambient wash so far-field glow reads as black */
-    filter: brightness(1.05) contrast(2.6);
-    opacity: 0.8;
   }
 
   /* ───── Cursor spotlight ───── */
@@ -164,8 +114,6 @@
   }
 
   /* ─────────────────────────  Buttons  ───────────────────────── */
-  .eb-wrap { position: relative; display: inline-flex; border-radius: 100px; }
-  .eb-canvas { position: absolute; inset: -26px; width: calc(100% + 52px); height: calc(100% + 52px); pointer-events: none; }
   .btn {
     display: inline-flex;
     align-items: center;
@@ -191,7 +139,7 @@
   .btn-secondary:hover { border-color: var(--white); background: rgba(255,255,255,0.04); }
 
   /* ─────────────────────────  Nav  ───────────────────────── */
-  nav {
+  nav#nav {
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 100;
@@ -201,12 +149,12 @@
     transition: background 0.3s var(--ease), border-color 0.3s var(--ease), backdrop-filter 0.3s var(--ease);
     border-bottom: 1px solid transparent;
   }
-  nav.scrolled {
+  nav#nav.scrolled {
     background: rgba(0,0,0,0.72);
     backdrop-filter: saturate(180%) blur(12px);
     border-bottom: 1px solid var(--border);
   }
-  nav .wrap { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  nav#nav .wrap { display: flex; align-items: center; justify-content: space-between; width: 100%; }
   .logo { font-size: 18px; font-weight: 600; letter-spacing: -0.04em; }
   .nav-links { display: flex; align-items: center; gap: 4px; }
   .nav-links a {
@@ -232,17 +180,34 @@
   .hero-fallback {
     position: absolute; inset: 0; z-index: 0;
     background:
-      radial-gradient(60% 50% at 30% 20%, #141414 0%, transparent 70%),
-      radial-gradient(50% 60% at 80% 70%, #181818 0%, transparent 70%),
+      radial-gradient(60% 50% at 30% 20%, #101010 0%, transparent 70%),
+      radial-gradient(50% 60% at 80% 70%, #141414 0%, transparent 70%),
       linear-gradient(180deg, #000 0%, #0a0a0a 100%);
-    background-size: 200% 200%;
-    animation: drift 18s ease-in-out infinite alternate;
   }
-  @keyframes drift { to { background-position: 100% 100%; } }
+  /* starfield sits above the base gradient, below particles */
+  .starfield { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .star {
+    position: absolute;
+    width: 1px; height: 1px;
+    background: #fff;
+    border-radius: 50%;
+    opacity: var(--o, 0.5);
+    animation: twinkle var(--d, 3s) ease-in-out var(--dl, 0s) infinite alternate;
+  }
+  @keyframes twinkle {
+    from { opacity: var(--o, 0.5); }
+    to { opacity: calc(var(--o, 0.5) * 0.2); }
+  }
+  .moonlight {
+    position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse 600px 400px at 85% 15%, rgba(100,140,255,0.07), transparent);
+    pointer-events: none;
+  }
+  /* particle text canvas — right half only, headline owns the left */
   #particle-canvas {
     position: absolute;
-    inset: 0;
-    width: 100%;
+    left: 50%; top: 0;
+    width: 50%;
     height: 100%;
     display: block;
     z-index: 1;
@@ -254,13 +219,6 @@
     pointer-events: none;
   }
   .hero .wrap { position: relative; z-index: 2; width: 100%; padding-top: 80px; padding-bottom: 80px; }
-  .hero-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 14px; border: 1px solid var(--border); border-radius: 100px;
-    background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
-    margin-bottom: 28px;
-  }
-  .hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px #22c55e; }
   .hero h1 {
     font-size: clamp(44px, 8.5vw, 104px);
     font-weight: 600;
@@ -297,6 +255,7 @@
     font-weight: 600;
     line-height: 1.02;
     letter-spacing: -0.035em;
+    color: var(--white);
   }
   .section-head p { margin-top: 18px; font-size: 18px; color: var(--mute); max-width: 52ch; }
   h2 .word { display: inline-block; will-change: transform, opacity; }
@@ -321,10 +280,10 @@
     transition: border-color 0.3s var(--ease), transform 0.3s var(--ease);
   }
   .cell:hover { border-color: #444; transform: scale(1.02); }
-  .cell .tag { font-family: var(--mono); font-size: 12px; color: var(--mute); letter-spacing: 0.08em; text-transform: uppercase; }
+  .cell .tag { font-family: var(--mono); font-size: 12px; color: var(--label); letter-spacing: 0.08em; text-transform: uppercase; }
   .cell .ttl {
     font-weight: 600; letter-spacing: -0.03em; line-height: 1.0;
-    margin: 0; font-size: 28px;
+    margin: 0; font-size: 28px; color: var(--white);
   }
   .cell .desc { color: var(--mute); font-size: 15px; line-height: 1.5; margin-top: 12px; max-width: 36ch; }
   .cell .price { font-family: var(--mono); font-size: 13px; color: var(--white); margin-top: 18px; }
@@ -334,8 +293,6 @@
     font-size: 180px; font-weight: 600; line-height: 1; color: rgba(255,255,255,0.025);
     letter-spacing: -0.05em; pointer-events: none; user-select: none;
   }
-
-  /* asymmetric placement: featured 60% / 2x2 right / asymmetric bottom row */
   .cell.website  { grid-column: span 6; grid-row: span 2; }
   .cell.website .ttl { font-size: clamp(40px, 5vw, 64px); }
   .cell.website .desc { font-size: 17px; max-width: 40ch; }
@@ -347,7 +304,6 @@
   .cell.menu     { grid-column: span 6; }
   .cell.seo      { grid-column: span 4; }
   @media (max-width: 900px) {
-    .bento { grid-template-columns: repeat(10, 1fr); }
     .cell.website { grid-column: span 10; grid-row: span 1; }
     .cell.mobile  { grid-column: span 10; }
     .cell.chatbot { grid-column: span 6; }
@@ -363,66 +319,185 @@
     .cell.chatbot .desc, .cell.booking .desc { font-size: 15px; }
   }
 
-  /* ─────────────────────────  Template gallery — draggable 3D arc  ───────────────────────── */
+  /* ═════════ Codrops 3DCarousel (css/base.css, adapted tokens/fonts only) ═════════ */
   .carousel-band {
     background: linear-gradient(180deg, #000 0%, #060606 50%, #000 100%);
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
     overflow: hidden;
+    padding: 0;
   }
-  .carousel-head { text-align: center; margin-bottom: 56px; }
-  .carousel-head .eyebrow { display: block; margin-bottom: 16px; }
-  .carousel-head h2 { font-size: clamp(32px, 5vw, 56px); font-weight: 600; letter-spacing: -0.035em; }
-  .stage {
+  .scene {
+    perspective: 900px;
     position: relative;
-    height: 460px;
-    perspective: 1400px;
-    margin: 0 auto;
-    cursor: grab;
-    touch-action: pan-y; /* horizontal swipe drags carousel, vertical still scrolls */
-    user-select: none;
-    -webkit-user-select: none;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
-  .stage.dragging { cursor: grabbing; }
-  #carousel { position: absolute; inset: 0; transform-style: preserve-3d; }
-  .slide {
+  .scene__title {
+    position: relative;
+    z-index: 10;
+    margin: 0;
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: clamp(16px, 2.6vw, 28px);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+  .scene__title a { display: block; cursor: pointer; }
+  .scene__title span { display: inline-block; }
+  .scene__title .char {
+    display: inline-block;
+    transform-style: preserve-3d;
+    transform-origin: 50% 0%;
+  }
+  .scene__hint {
     position: absolute;
-    width: 300px; height: 390px;
-    left: 50%; top: 50%;
+    bottom: 10vh; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 11px; color: var(--label);
+    letter-spacing: 0.1em; text-transform: uppercase; z-index: 10;
+  }
+  .carousel {
+    width: 400px;
+    height: 500px;
+    top: 50%;
+    left: 50%;
+    margin: -250px 0 0 -200px;
+    position: absolute;
+    transform-style: preserve-3d;
+    will-change: transform;
+    transform: translateZ(-550px) rotateY(0deg);
+  }
+  .carousel__cell {
+    position: absolute;
+    width: 350px;
+    height: 420px;
+    left: 0;
+    top: 0;
+    transform-style: preserve-3d;
+  }
+  .card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .card__face {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    backface-visibility: hidden;
+    background-image: var(--img);
+    background-size: cover;
+    border-radius: var(--border-radius);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--surface-2);
-    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.8);
-    will-change: transform, opacity;
+    overflow: hidden;
   }
-  .slide .shot {
-    height: 100%; display: flex; flex-direction: column;
-    border-radius: 13px; overflow: hidden;
-    transition: transform 0.35s var(--ease);
+  .card__face--back { transform: rotateY(180deg); }
+  .card__label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 18px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
   }
-  .slide:hover .shot { transform: scale(1.05); }
-  .slide .bar { height: 34px; flex: 0 0 34px; display: flex; align-items: center; gap: 6px; padding: 0 14px; border-bottom: 1px solid var(--border); background: #0a0a0a; }
-  .slide .bar i { width: 9px; height: 9px; border-radius: 50%; background: #2a2a2a; display: block; }
-  .slide .canvas-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; }
-  .slide .label { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(transparent, rgba(0,0,0,0.85)); }
-  .slide .label .name { font-weight: 600; letter-spacing: -0.02em; font-size: 17px; }
-  .slide .label .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; }
-  .slide .ph { font-family: var(--mono); font-size: 12px; color: #555; letter-spacing: 0.1em; }
-  .slide .eb-slide { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: 13px; }
-  .carousel-controls { display: flex; justify-content: center; gap: 12px; margin-top: 40px; }
-  .carousel-controls button {
-    width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border);
-    background: transparent; color: var(--white); cursor: pointer; font-size: 18px;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease);
-  }
-  .carousel-controls button:hover { border-color: var(--white); background: rgba(255,255,255,0.05); transform: scale(1.05); }
-  .dots { display: flex; justify-content: center; gap: 8px; margin-top: 22px; }
-  .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background 0.3s, width 0.3s; cursor: pointer; }
-  .dots i.on { background: var(--white); width: 22px; border-radius: 100px; }
-  .drag-hint { text-align: center; margin-top: 18px; font-family: var(--mono); font-size: 11px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; }
+  .card__label .name { font-family: var(--sans); font-weight: 600; letter-spacing: -0.02em; font-size: 18px; color: var(--white); text-transform: none; }
+  .card__label .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; }
   @media (max-width: 560px) {
-    .stage { height: 400px; }
-    .slide { width: 240px; height: 340px; }
+    .carousel { width: 260px; height: 340px; margin: -170px 0 0 -130px; transform: translateZ(-300px) rotateY(0deg); }
+    .carousel__cell { width: 230px; height: 290px; }
+  }
+
+  .preview-wrapper { position: relative; z-index: 500; }
+  .preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0 10vw;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    grid-row-gap: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--black); /* page content sits behind the fixed preview */
+  }
+  .preview__header {
+    display: flex;
+    width: 100%;
+    align-items: flex-end;
+    justify-content: space-between;
+    line-height: 1;
+  }
+  .preview__title {
+    margin: 0;
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: clamp(15px, 2.2vw, 24px);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+  .preview__title .char, .preview__close .char { display: inline-block; }
+  .preview__close {
+    background: none;
+    text-transform: uppercase;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    color: var(--mute);
+  }
+  .preview__close:hover, .preview__close:focus { outline: none; color: var(--white); }
+  .grid {
+    padding: 1rem 0;
+    display: grid;
+    grid-template-columns: repeat(var(--column-count, 2), minmax(80px, 1fr));
+    grid-column-gap: 1.5rem;
+    grid-row-gap: 1.5rem;
+    width: 100%;
+    perspective: 900px;
+  }
+  .grid__item {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    will-change: transform, clip-path;
+    overflow: hidden;
+    border-radius: var(--border-radius);
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .grid__item-image {
+    width: 100%;
+    aspect-ratio: 4/5;
+    background-size: 100%;
+    background-position: 50% 50%;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    transition: opacity 0.15s cubic-bezier(0.2, 0, 0.2, 1);
+  }
+  .grid__item:hover .grid__item-image { opacity: 0.7; }
+  .grid__item-caption h3 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 6px 0 0;
+    color: var(--white);
+  }
+  .grid__item-caption .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; }
+  @media screen and (min-width: 65em) {
+    .grid { --column-count: 6; }
+  }
+  @media screen and (max-width: 64.99em) {
+    .grid { --column-count: 3; }
   }
 
   /* ─────────────────────────  Process — no numbers, slide-in rows  ───────────────────────── */
@@ -435,7 +510,7 @@
     border-top: 1px solid var(--border);
   }
   .step:last-child { border-bottom: 1px solid var(--border); }
-  .step .name { font-size: clamp(26px, 3.6vw, 44px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; }
+  .step .name { font-size: clamp(26px, 3.6vw, 44px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; color: var(--white); }
   .step .desc { color: var(--mute); font-size: 17px; max-width: 48ch; }
   .step .meta { font-family: var(--mono); font-size: 13px; color: var(--mute); text-align: right; white-space: nowrap; }
   @media (max-width: 720px) {
@@ -443,7 +518,7 @@
     .step .meta { text-align: left; }
   }
 
-  /* ─────────────────────────  Stats — overflow fixed  ───────────────────────── */
+  /* ─────────────────────────  Stats  ───────────────────────── */
   .stats-band { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
   .stat {
@@ -460,6 +535,7 @@
     line-height: 1.05;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+    color: var(--white);
   }
   .stat .val .suffix { color: var(--mute); }
   .stat .key { font-family: var(--mono); font-size: 13px; color: var(--mute); margin-top: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -484,9 +560,9 @@
   .prow:hover { background: rgba(255,255,255,0.025); }
   .prow.head { background: var(--surface); }
   .prow.head .c { font-family: var(--mono); font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; }
-  .prow .name { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+  .prow .name { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; color: var(--white); }
   .prow .note { color: var(--mute); font-size: 14px; }
-  .prow .amt { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; text-align: right; font-family: var(--mono); }
+  .prow .amt { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; text-align: right; font-family: var(--mono); color: var(--white); }
   .prow .amt small { color: var(--mute); font-weight: 400; }
   @media (max-width: 640px) {
     .prow { grid-template-columns: 1fr auto; gap: 8px 16px; padding: 22px 20px; }
@@ -510,6 +586,7 @@
     line-height: 0.98;
     max-width: 16ch;
     margin: 0 auto 24px;
+    color: var(--white);
   }
   .contact-band p.lead { font-size: 19px; color: var(--mute); max-width: 46ch; margin: 0 auto 40px; }
   #typebot-container {
@@ -541,15 +618,11 @@
   .reveal.d2 { transition-delay: 0.16s; }
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
-    .hero-fallback, .scroll-hint .line { animation: none; }
-    .slide .shot { transition: none; }
+    .scroll-hint .line, .star { animation: none; }
   }
 </style>
 </head>
 <body>
-
-<!-- ───────────────  NEON CURSOR MOUNT  ─────────────── -->
-<div id="app" aria-hidden="true"></div>
 
 <!-- ───────────────  NAV  ─────────────── -->
 <nav id="nav">
@@ -568,17 +641,15 @@
 <!-- ───────────────  HERO  ─────────────── -->
 <header class="hero" id="top">
   <div class="hero-fallback"></div>
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="moonlight" aria-hidden="true"></div>
   <canvas id="particle-canvas"></canvas>
   <div class="wrap">
-    <span class="hero-badge">
-      <span class="dot"></span>
-      <span class="eyebrow" style="color:#fff">Now taking new projects</span>
-    </span>
     <h1 id="hero-headline">Your presence,<br />perfected.</h1>
     <p class="sub">AI-powered websites, apps and digital tools for professionals.</p>
     <div class="hero-cta">
-      <span class="eb-wrap"><canvas class="eb-canvas"></canvas><a href="#templates" class="btn btn-primary cta-button">See our work</a></span>
-      <span class="eb-wrap"><canvas class="eb-canvas"></canvas><a href="#contact" class="btn btn-secondary cta-button">Get started</a></span>
+      <a href="#templates" class="btn btn-primary cta-button">See our work</a>
+      <a href="#contact" class="btn btn-secondary cta-button">Get started</a>
     </div>
   </div>
   <div class="scroll-hint">
@@ -653,26 +724,103 @@
   </div>
 </section>
 
-<!-- ───────────────  TEMPLATE GALLERY — DRAGGABLE 3D ARC  ─────────────── -->
-<section class="band section carousel-band" id="templates">
-  <div class="wrap">
-    <div class="carousel-head reveal">
-      <span class="eyebrow">Template gallery</span>
-      <h2>Choose your design.</h2>
+<!-- ═══════════  TEMPLATE GALLERY — CODROPS 3D CAROUSEL  ═══════════ -->
+<section class="section carousel-band" id="templates">
+  <div class="scene-wrapper">
+    <div class="scene" data-radius="650">
+      <h2 class="scene__title" data-speed="0.7">
+        <a href="#preview-1"><span>Choose your design</span></a>
+      </h2>
+      <div class="carousel">
+        <div class="carousel__cell">
+          <div class="card template-card" style="--img: linear-gradient(150deg, #0b1f3a, #1a4a7a)">
+            <div class="card__face card__face--front"><div class="card__label"><div class="name">Novena</div><div class="cat">Clinical Authority</div></div></div>
+            <div class="card__face card__face--back"><div class="card__label"><div class="name">Novena</div><div class="cat">Clinical Authority</div></div></div>
+          </div>
+        </div>
+        <div class="carousel__cell">
+          <div class="card template-card" style="--img: linear-gradient(150deg, #2a1810, #7a4a2a)">
+            <div class="card__face card__face--front"><div class="card__label"><div class="name">Medic</div><div class="cat">Warm &amp; Elegant</div></div></div>
+            <div class="card__face card__face--back"><div class="card__label"><div class="name">Medic</div><div class="cat">Warm &amp; Elegant</div></div></div>
+          </div>
+        </div>
+        <div class="carousel__cell">
+          <div class="card template-card" style="--img: linear-gradient(150deg, #0a1a18, #1a6a5a)">
+            <div class="card__face card__face--front"><div class="card__label"><div class="name">MediLab</div><div class="cat">Modern Minimal</div></div></div>
+            <div class="card__face card__face--back"><div class="card__label"><div class="name">MediLab</div><div class="cat">Modern Minimal</div></div></div>
+          </div>
+        </div>
+        <div class="carousel__cell">
+          <div class="card template-card" style="--img: linear-gradient(150deg, #2a1014, #7a2a3a)">
+            <div class="card__face card__face--front"><div class="card__label"><div class="name">Savor</div><div class="cat">Restaurant</div></div></div>
+            <div class="card__face card__face--back"><div class="card__label"><div class="name">Savor</div><div class="cat">Restaurant</div></div></div>
+          </div>
+        </div>
+        <div class="carousel__cell">
+          <div class="card template-card" style="--img: linear-gradient(150deg, #101a0a, #3a6a1a)">
+            <div class="card__face card__face--front"><div class="card__label"><div class="name">Vital</div><div class="cat">Fitness</div></div></div>
+            <div class="card__face card__face--back"><div class="card__label"><div class="name">Vital</div><div class="cat">Fitness</div></div></div>
+          </div>
+        </div>
+        <div class="carousel__cell">
+          <div class="card template-card" style="--img: linear-gradient(150deg, #1a1a22, #3a3a5a)">
+            <div class="card__face card__face--front"><div class="card__label"><div class="name">Lex</div><div class="cat">Legal</div></div></div>
+            <div class="card__face card__face--back"><div class="card__label"><div class="name">Lex</div><div class="cat">Legal</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="scene__hint">Scroll to rotate · click title to browse</div>
     </div>
-
-    <div class="stage reveal d1">
-      <div id="carousel"></div>
-    </div>
-
-    <div class="carousel-controls reveal d1">
-      <button id="prev" aria-label="Previous template">&larr;</button>
-      <button id="next" aria-label="Next template">&rarr;</button>
-    </div>
-    <div class="dots" id="dots"></div>
-    <div class="drag-hint">Drag · swipe · scroll sideways</div>
   </div>
+  <!-- / scene-wrapper -->
 </section>
+
+<div class="preview-wrapper">
+  <div class="preview" id="preview-1">
+    <header class="preview__header">
+      <h2 class="preview__title"><span>Choose your design</span></h2>
+      <button class="preview__close">Close ×</button>
+    </header>
+    <div class="grid">
+      <figure aria-labelledby="caption1" class="grid__item" role="img">
+        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #0b1f3a, #1a4a7a)"></div>
+        <figcaption class="grid__item-caption" id="caption1">
+          <h3>Novena</h3><div class="cat">Clinical Authority</div>
+        </figcaption>
+      </figure>
+      <figure aria-labelledby="caption2" class="grid__item" role="img">
+        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #2a1810, #7a4a2a)"></div>
+        <figcaption class="grid__item-caption" id="caption2">
+          <h3>Medic</h3><div class="cat">Warm &amp; Elegant</div>
+        </figcaption>
+      </figure>
+      <figure aria-labelledby="caption3" class="grid__item" role="img">
+        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #0a1a18, #1a6a5a)"></div>
+        <figcaption class="grid__item-caption" id="caption3">
+          <h3>MediLab</h3><div class="cat">Modern Minimal</div>
+        </figcaption>
+      </figure>
+      <figure aria-labelledby="caption4" class="grid__item" role="img">
+        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #2a1014, #7a2a3a)"></div>
+        <figcaption class="grid__item-caption" id="caption4">
+          <h3>Savor</h3><div class="cat">Restaurant</div>
+        </figcaption>
+      </figure>
+      <figure aria-labelledby="caption5" class="grid__item" role="img">
+        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #101a0a, #3a6a1a)"></div>
+        <figcaption class="grid__item-caption" id="caption5">
+          <h3>Vital</h3><div class="cat">Fitness</div>
+        </figcaption>
+      </figure>
+      <figure aria-labelledby="caption6" class="grid__item" role="img">
+        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #1a1a22, #3a3a5a)"></div>
+        <figcaption class="grid__item-caption" id="caption6">
+          <h3>Lex</h3><div class="cat">Legal</div>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</div>
 
 <!-- ───────────────  HOW IT WORKS — NO NUMBERS  ─────────────── -->
 <section class="band section" id="process">
@@ -788,8 +936,8 @@
     <h2>Ready to perfect your presence?</h2>
     <p class="lead reveal d1">Tell Prezi what you need. We'll scope it, price it and start the 72-hour clock.</p>
     <div class="contact-cta reveal d1">
-      <span class="eb-wrap"><canvas class="eb-canvas"></canvas><a href="mailto:hello@prezance.co" class="btn btn-primary cta-button">Start a project</a></span>
-      <span class="eb-wrap"><canvas class="eb-canvas"></canvas><a href="#templates" class="btn btn-secondary cta-button">Browse templates</a></span>
+      <a href="mailto:hello@prezance.co" class="btn btn-primary cta-button">Start a project</a>
+      <a href="#templates" class="btn btn-secondary cta-button">Browse templates</a>
     </div>
 
     <div id="typebot-container" class="reveal d2">
@@ -825,18 +973,19 @@
   const isTouch = window.matchMedia("(hover: none)").matches;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const hasGSAP = !!(window.gsap && window.ScrollTrigger);
-  if (hasGSAP) gsap.registerPlugin(ScrollTrigger);
+  if (hasGSAP) gsap.registerPlugin(ScrollTrigger, ...(window.ScrollToPlugin ? [ScrollToPlugin] : []), ...(window.SplitText ? [SplitText] : []));
 
   /* Nav background on scroll */
-  const nav = document.getElementById("nav");
-  const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 24);
+  const navEl = document.getElementById("nav");
+  const onScroll = () => navEl.classList.toggle("scrolled", window.scrollY > 24);
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
 
-  /* ═════════ SECTION 3 — Lenis smooth scroll + GSAP wiring ═════════ */
+  /* ───── Lenis smooth scroll + GSAP wiring ───── */
   let lenis = null;
   if (window.Lenis && !reduced) {
     lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+    window.__lenis = lenis; // exposed for the Codrops smoother bridge below
     if (hasGSAP) {
       lenis.on("scroll", ScrollTrigger.update);
       gsap.ticker.add((time) => lenis.raf(time * 1000));
@@ -846,7 +995,7 @@
       requestAnimationFrame(raf);
     }
   }
-  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+  document.querySelectorAll('nav a[href^="#"], .hero a[href^="#"], .contact-cta a[href^="#"], footer a[href^="#"]').forEach((a) => {
     a.addEventListener("click", (e) => {
       const t = document.querySelector(a.getAttribute("href"));
       if (!t) return;
@@ -856,7 +1005,24 @@
     });
   });
 
-  /* Section fade-ups + inner reveals */
+  /* ───── FIX 3 — starfield + moonlight (stars built in JS, twinkle via CSS) ───── */
+  const starfield = document.querySelector(".starfield");
+  if (starfield) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 250; i++) {
+      const s = document.createElement("span");
+      s.className = "star";
+      s.style.left = (Math.random() * 100).toFixed(2) + "%";
+      s.style.top = (Math.random() * 100).toFixed(2) + "%";
+      s.style.setProperty("--o", (0.3 + Math.random() * 0.5).toFixed(2));      // opacity 0.3–0.8
+      s.style.setProperty("--d", (2 + Math.random() * 3).toFixed(2) + "s");    // twinkle 2–5s
+      s.style.setProperty("--dl", (Math.random() * 5).toFixed(2) + "s");       // random phase
+      frag.appendChild(s);
+    }
+    starfield.appendChild(frag);
+  }
+
+  /* ───── Section fade-ups + inner reveals + process slide-ins ───── */
   if (reduced) {
     document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
   } else if (hasGSAP) {
@@ -871,7 +1037,6 @@
       once: true,
       onEnter: (els) => els.forEach((el) => el.classList.add("in"))
     });
-    /* SECTION 9 — process rows slide in from the left */
     gsap.utils.toArray(".step").forEach((row) => {
       gsap.from(row, {
         x: -60, opacity: 0, duration: 0.8, ease: "power3.out",
@@ -887,10 +1052,10 @@
     document.querySelectorAll(".reveal").forEach((el) => revObs.observe(el));
   }
 
-  /* SplitText word reveals on ALL section headings (after fonts so metrics are right) */
+  /* SplitText word reveals on section headings (after fonts so metrics are right) */
   function splitHeadings() {
     if (!hasGSAP || !window.SplitText || reduced) return;
-    document.querySelectorAll(".section-head h2, .carousel-head h2, .contact-band h2").forEach((h) => {
+    document.querySelectorAll(".section-head h2, .contact-band h2").forEach((h) => {
       try {
         const split = new SplitText(h, { type: "words", wordsClass: "word" });
         gsap.from(split.words, {
@@ -901,7 +1066,7 @@
     });
   }
 
-  /* ═════════ SECTION 2 — Three.js particle text hero ═════════ */
+  /* ───── FIX 2 — Three.js particle text, right half of hero only ───── */
   const heroEl = document.querySelector(".hero");
   const pCanvas = document.getElementById("particle-canvas");
   function initParticles() {
@@ -916,24 +1081,23 @@
     }
     const COUNT = isTouch ? 3500 : 8000;
     const scene = new THREE.Scene();
-    let W = heroEl.clientWidth, H = heroEl.clientHeight;
+    let W = pCanvas.clientWidth, H = pCanvas.clientHeight; // canvas = right half of hero
     const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0.1, 10);
     camera.position.z = 1;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H, false);
 
-    // sample "PREZANCE" pixels from an offscreen 2D canvas
+    // sample "PREZANCE" pixels from an offscreen 2D canvas (middle-right, slight downward offset)
     function sampleText() {
       const off = document.createElement("canvas");
       off.width = W; off.height = H;
       const ctx = off.getContext("2d");
-      const fs = Math.min(W / 6.8, 190);
+      const fs = Math.min(W / 5.6, 150);
       ctx.fillStyle = "#fff";
       ctx.font = `700 ${fs}px Inter, system-ui, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      // narrow screens: drop below the headline/CTAs so text stays readable
-      ctx.fillText("PREZANCE", W / 2, W < 720 ? H * 0.8 : H * 0.45);
+      ctx.fillText("PREZANCE", W / 2, W < 420 ? H * 0.68 : H * 0.55); // clears the subheading on narrow screens
       const data = ctx.getImageData(0, 0, W, H).data;
       const pts = [];
       const step = 2;
@@ -967,7 +1131,7 @@
       positions[i * 3 + 1] = scatter[i * 2 + 1];
       positions[i * 3 + 2] = 0;
       phase[i] = Math.random() * Math.PI * 2;
-      const b = 0.55 + Math.random() * 0.45; // slight opacity variation via brightness
+      const b = 0.55 + Math.random() * 0.45;
       colors[i * 3] = b; colors[i * 3 + 1] = b; colors[i * 3 + 2] = b;
     }
     assignTargets();
@@ -986,7 +1150,6 @@
     });
     scene.add(new THREE.Points(geo, mat));
 
-    // cursor repel state (world coords)
     let mx = 1e9, my = 1e9;
     if (!isTouch) {
       heroEl.addEventListener("pointermove", (e) => {
@@ -1006,20 +1169,18 @@
       requestAnimationFrame(frame);
       if (!heroVisible) return;
       let t = Math.min(Math.max((now - assembleStart) / DURATION, 0), 1);
-      t = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      t = 1 - Math.pow(1 - t, 3);
       if (reduced) t = 1;
       const time = now * 0.0012;
       const arr = geo.attributes.position.array;
       for (let i = 0; i < COUNT; i++) {
         const tx = targets[i * 2], ty = targets[i * 2 + 1];
-        // scatter → text lerp, then continuous ±3px drift
         let bx = scatter[i * 2] + (tx - scatter[i * 2]) * t;
         let by = scatter[i * 2 + 1] + (ty - scatter[i * 2 + 1]) * t;
         if (!reduced) {
           bx += Math.sin(time + phase[i]) * 3 * t;
           by += Math.cos(time * 1.3 + phase[i]) * 3 * t;
         }
-        // repel within 80px of cursor
         const dx = bx - mx, dy = by - my;
         const d2 = dx * dx + dy * dy;
         if (d2 < 6400 && d2 > 0.01) {
@@ -1028,7 +1189,6 @@
           bx += (dx / d) * f * 42;
           by += (dy / d) * f * 42;
         }
-        // smooth toward computed point (eases both repel and snap-back)
         arr[i * 3] += (bx - arr[i * 3]) * 0.16;
         arr[i * 3 + 1] += (by - arr[i * 3 + 1]) * 0.16;
       }
@@ -1041,7 +1201,7 @@
     window.addEventListener("resize", () => {
       clearTimeout(rsT);
       rsT = setTimeout(() => {
-        W = heroEl.clientWidth; H = heroEl.clientHeight;
+        W = pCanvas.clientWidth; H = pCanvas.clientHeight;
         camera.left = -W / 2; camera.right = W / 2; camera.top = H / 2; camera.bottom = -H / 2;
         camera.updateProjectionMatrix();
         renderer.setSize(W, H, false);
@@ -1069,162 +1229,13 @@
     })();
   }
 
-  /* ═════════ SECTION 6 — ElectricBorder (pure canvas, fBm noise) ═════════ */
-  class ElectricBorder {
-    constructor(canvas, options = {}) {
-      this.canvas = canvas;
-      this.ctx = canvas.getContext("2d");
-      this.width = options.width || 200;
-      this.height = options.height || 50;
-      this.octaves = options.octaves || 8;
-      this.lacunarity = options.lacunarity || 1.6;
-      this.gain = options.gain || 0.6;
-      this.amplitude = options.amplitude || 0.15;
-      this.frequency = options.frequency || 8;
-      this.displacement = options.displacement || 8;
-      this.speed = options.speed || 1.2;
-      this.borderOffset = options.borderOffset || 4;
-      this.borderRadius = options.borderRadius || 25;
-      this.lineWidth = options.lineWidth || 1;
-      this.color = options.color || "rgba(255,255,255,0.6)";
-      this.time = Math.random() * 100;
-      this.visible = true;
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
-      // per-instance noise table
-      this.tbl = new Float32Array(256);
-      for (let i = 0; i < 256; i++) this.tbl[i] = Math.random();
-    }
-    noise(x) {
-      const i = Math.floor(x), f = x - i;
-      const u = f * f * (3 - 2 * f);
-      const a = this.tbl[i & 255], b = this.tbl[(i + 1) & 255];
-      return a + (b - a) * u;
-    }
-    fbm(x) {
-      let v = 0, a = this.amplitude, fr = 1;
-      for (let o = 0; o < this.octaves; o++) {
-        v += a * (this.noise(x * fr) * 2 - 1);
-        fr *= this.lacunarity;
-        a *= this.gain;
-      }
-      return v;
-    }
-    /* point + outward normal on a rounded-rect perimeter, t ∈ [0,1) */
-    pointAt(t) {
-      const o = this.borderOffset + this.displacement + 6;
-      const w = this.width - o * 2, h = this.height - o * 2;
-      const r = Math.min(this.borderRadius, h / 2, w / 2);
-      const sw = w - 2 * r, sh = h - 2 * r, arc = (Math.PI * r) / 2;
-      const P = 2 * sw + 2 * sh + 4 * arc;
-      let d = t * P;
-      const x0 = o, y0 = o;
-      if (d < sw) return [x0 + r + d, y0, 0, -1];
-      d -= sw;
-      if (d < arc) { const a = -Math.PI / 2 + d / r; return [x0 + r + sw + Math.cos(a) * r, y0 + r + Math.sin(a) * r, Math.cos(a), Math.sin(a)]; }
-      d -= arc;
-      if (d < sh) return [x0 + w, y0 + r + d, 1, 0];
-      d -= sh;
-      if (d < arc) { const a = d / r; return [x0 + r + sw + Math.cos(a) * r, y0 + r + sh + Math.sin(a) * r, Math.cos(a), Math.sin(a)]; }
-      d -= arc;
-      if (d < sw) return [x0 + r + sw - d, y0 + h, 0, 1];
-      d -= sw;
-      if (d < arc) { const a = Math.PI / 2 + d / r; return [x0 + r + Math.cos(a) * r, y0 + r + sh + Math.sin(a) * r, Math.cos(a), Math.sin(a)]; }
-      d -= arc;
-      if (d < sh) return [x0, y0 + r + sh - d, -1, 0];
-      d -= sh;
-      const a = Math.PI + d / r;
-      return [x0 + r + Math.cos(a) * r, y0 + r + Math.sin(a) * r, Math.cos(a), Math.sin(a)];
-    }
-    draw(dt) {
-      this.time += dt * this.speed;
-      const ctx = this.ctx;
-      ctx.clearRect(0, 0, this.width, this.height);
-      const SAMPLES = 160;
-      ctx.beginPath();
-      for (let s = 0; s <= SAMPLES; s++) {
-        const t = (s % SAMPLES) / SAMPLES;
-        const [x, y, nx, ny] = this.pointAt(t);
-        const n = this.fbm(t * this.frequency + this.time) / this.amplitude; // normalised ±~1
-        const px = x + nx * n * this.displacement;
-        const py = y + ny * n * this.displacement;
-        s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      // glow pass + crisp pass (electric look)
-      ctx.lineWidth = this.lineWidth * 2.5;
-      ctx.strokeStyle = this.color;
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur = 8;
-      ctx.globalAlpha = 0.45;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-      ctx.globalAlpha = 1;
-      ctx.lineWidth = this.lineWidth;
-      ctx.stroke();
-    }
-  }
-
-  const ebInstances = [];
-  function setupElectricBorders() {
-    /* CTA buttons — canvas covers the button with overflow for the arcs */
-    document.querySelectorAll(".eb-wrap").forEach((wrap) => {
-      const btn = wrap.querySelector(".cta-button");
-      const canvas = wrap.querySelector(".eb-canvas");
-      if (!btn || !canvas) return;
-      const pad = 26;
-      const eb = new ElectricBorder(canvas, {
-        width: btn.offsetWidth + pad * 2,
-        height: btn.offsetHeight + pad * 2,
-        borderRadius: btn.offsetHeight / 2 + 4,
-        borderOffset: 4,
-        displacement: 8,
-        speed: 1.2,
-        color: "rgba(255,255,255,0.6)"
-      });
-      btn.addEventListener("pointerenter", () => { eb.speed = 2.5; eb.displacement = 15; });
-      btn.addEventListener("pointerleave", () => { eb.speed = 1.2; eb.displacement = 8; });
-      ebInstances.push({ eb, el: wrap });
-    });
-    /* Template cards — dim #333 border inside each slide, intensifies on hover */
-    document.querySelectorAll(".slide").forEach((slide) => {
-      const canvas = document.createElement("canvas");
-      canvas.className = "eb-slide";
-      slide.appendChild(canvas);
-      const eb = new ElectricBorder(canvas, {
-        width: slide.offsetWidth,
-        height: slide.offsetHeight,
-        borderRadius: 14,
-        borderOffset: 2,
-        displacement: 5,
-        speed: 0.8,
-        color: "rgba(120,120,120,0.7)" /* #333-family, visible over dark card */
-      });
-      slide.addEventListener("pointerenter", () => { eb.speed = 2.2; eb.displacement = 10; eb.color = "rgba(255,255,255,0.55)"; });
-      slide.addEventListener("pointerleave", () => { eb.speed = 0.8; eb.displacement = 5; eb.color = "rgba(120,120,120,0.7)"; });
-      ebInstances.push({ eb, el: slide });
-    });
-    /* visibility-gated shared loop @30fps */
-    const vis = new WeakMap();
-    const io = new IntersectionObserver((en) => en.forEach((e) => vis.set(e.target, e.isIntersecting)));
-    ebInstances.forEach(({ el }) => { vis.set(el, false); io.observe(el); });
-    if (reduced) { ebInstances.forEach(({ eb }) => eb.draw(0)); return; }
-    let last = performance.now();
-    (function loop(now) {
-      requestAnimationFrame(loop);
-      const dt = now - last;
-      if (dt < 33) return;
-      last = now;
-      ebInstances.forEach(({ eb, el }) => { if (vis.get(el)) eb.draw(dt * 0.001); });
-    })(last);
-  }
-
-  /* ═════════ SECTION 4 — cursor spotlight / text swap / magnetic ═════════ */
+  /* ───── Cursor spotlight / text swap / magnetic (kept per FIX 4) ───── */
   if (!isTouch) {
     const spot = document.getElementById("spotlight");
     const label = document.getElementById("cursor-label");
     const cursorMap = [
       [".template-card", "Explore →"],
+      [".grid__item", "Explore →"],
       [".cta-button", "Start →"],
       [".process-step", "Read →"]
     ];
@@ -1236,11 +1247,9 @@
     }));
 
     window.addEventListener("mousemove", (e) => {
-      /* spotlight */
       spot.style.background = `radial-gradient(circle 300px at ${e.clientX}px ${e.clientY}px, rgba(255,255,255,0.04), transparent)`;
       spot.classList.add("on");
 
-      /* label swap */
       label.style.left = e.clientX + "px";
       label.style.top = e.clientY + "px";
       let text = null;
@@ -1252,7 +1261,6 @@
       if (text) { label.textContent = text; label.classList.add("on"); }
       else label.classList.remove("on");
 
-      /* magnetic — within 60px of edge, pull 30% toward cursor */
       if (!reduced && hasGSAP) {
         magnets.forEach((m) => {
           const r = m.el.getBoundingClientRect();
@@ -1278,7 +1286,7 @@
     });
   }
 
-  /* ═════════ SECTION 8 — stats counters (0.8s, once) ═════════ */
+  /* ───── Stats counters (0.8s, once) ───── */
   const countObs = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (!e.isIntersecting) return;
@@ -1297,132 +1305,499 @@
   }, { threshold: 0.5 });
   document.querySelectorAll(".count").forEach((c) => countObs.observe(c));
 
-  /* ═════════ SECTION 7 — template gallery: draggable 3D arc ═════════ */
-  const templatesData = [
-    { name: "Novena", cat: "Clinical authority", a: "#0b1f3a", b: "#1a4a7a" },
-    { name: "Medic", cat: "Warm & elegant", a: "#2a1810", b: "#7a4a2a" },
-    { name: "MediLab", cat: "Modern minimal", a: "#0a1a18", b: "#1a6a5a" },
-    { name: "Savor", cat: "Restaurant", a: "#2a1014", b: "#7a2a3a" },
-    { name: "Vital", cat: "Fitness & wellness", a: "#101a0a", b: "#3a6a1a" },
-    { name: "Lex", cat: "Legal & corporate", a: "#1a1a22", b: "#3a3a5a" }
-  ];
-  const carousel = document.getElementById("carousel");
-  const dotsWrap = document.getElementById("dots");
-  const stage = document.querySelector(".stage");
-  const N = templatesData.length;
-  const slides = [];
-
-  templatesData.forEach((t, i) => {
-    const slide = document.createElement("div");
-    slide.className = "slide template-card";
-    slide.innerHTML = `
-      <div class="shot">
-        <div class="bar"><i></i><i></i><i></i></div>
-        <div class="canvas-area" style="background:linear-gradient(150deg, ${t.a}, ${t.b})">
-          <span class="ph">PREVIEW</span>
-          <div class="label">
-            <div class="name">${t.name}</div>
-            <div class="cat">${t.cat}</div>
-          </div>
-        </div>
-      </div>`;
-    carousel.appendChild(slide);
-    slides.push(slide);
-    const dot = document.createElement("i");
-    if (i === 0) dot.className = "on";
-    dot.addEventListener("click", () => snapTo(nearestIndexTarget(i)));
-    dotsWrap.appendChild(dot);
-  });
-
-  const state = { pos: 0 };
-  let SPACING = 340;
-  function calcSpacing() { SPACING = Math.min(340, stage.clientWidth * 0.42); }
-  calcSpacing();
-
-  function layout() {
-    for (let i = 0; i < N; i++) {
-      let off = i - state.pos;
-      off = ((off % N) + N) % N;
-      if (off > N / 2) off -= N;
-      const x = off * SPACING;
-      const ry = Math.max(-25, Math.min(25, -off * 25));
-      const z = -Math.abs(off) * 150;
-      const op = Math.abs(off) > 2.2 ? 0 : 1 - Math.abs(off) * 0.22;
-      const s = slides[i];
-      s.style.transform = `translate(-50%, -50%) translate3d(${x.toFixed(1)}px, 0, ${z.toFixed(1)}px) rotateY(${ry.toFixed(2)}deg)`;
-      s.style.zIndex = String(100 - Math.round(Math.abs(off) * 10));
-      s.style.opacity = op.toFixed(2);
-      s.style.pointerEvents = Math.abs(off) > 1.6 ? "none" : "auto";
-    }
-    const active = ((Math.round(state.pos) % N) + N) % N;
-    [...dotsWrap.children].forEach((d, i) => d.classList.toggle("on", i === active));
-  }
-  layout();
-
-  function nearestIndexTarget(i) {
-    // shortest path from current pos to index i (carousel wraps)
-    const base = Math.round(state.pos);
-    let delta = (i - ((base % N) + N) % N);
-    if (delta > N / 2) delta -= N;
-    if (delta < -N / 2) delta += N;
-    return base + delta;
-  }
-  let snapTween = null;
-  function snapTo(target) {
-    if (hasGSAP && !reduced) {
-      snapTween && snapTween.kill();
-      snapTween = gsap.to(state, { pos: target, duration: 0.65, ease: "power3.out", onUpdate: layout });
-    } else {
-      state.pos = target; layout();
-    }
-  }
-  document.getElementById("next").addEventListener("click", () => snapTo(Math.round(state.pos) + 1));
-  document.getElementById("prev").addEventListener("click", () => snapTo(Math.round(state.pos) - 1));
-
-  /* drag (mouse + touch swipe via pointer events) */
-  let dragging = false, dragStartX = 0, dragStartPos = 0, dragMoved = 0;
-  stage.addEventListener("pointerdown", (e) => {
-    dragging = true; dragMoved = 0;
-    dragStartX = e.clientX; dragStartPos = state.pos;
-    snapTween && snapTween.kill();
-    stage.classList.add("dragging");
-  });
-  window.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - dragStartX;
-    dragMoved = Math.max(dragMoved, Math.abs(dx));
-    state.pos = dragStartPos - dx / SPACING;
-    layout();
-  }, { passive: true });
-  window.addEventListener("pointerup", () => {
-    if (!dragging) return;
-    dragging = false;
-    stage.classList.remove("dragging");
-    snapTo(Math.round(state.pos));
-  });
-  /* suppress accidental click after a drag */
-  stage.addEventListener("click", (e) => { if (dragMoved > 8) { e.stopPropagation(); e.preventDefault(); } }, true);
-  /* trackpad horizontal scroll rotates the carousel */
-  let wheelT;
-  stage.addEventListener("wheel", (e) => {
-    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical scroll passes through
-    e.preventDefault();
-    state.pos += e.deltaX / 500;
-    layout();
-    clearTimeout(wheelT);
-    wheelT = setTimeout(() => snapTo(Math.round(state.pos)), 150);
-  }, { passive: false });
-
-  window.addEventListener("resize", () => { calcSpacing(); layout(); });
-
-  /* ═════════ boot order: fonts → headings split, particles, electric borders ═════════ */
+  /* boot non-carousel pieces after fonts */
   function boot() {
     splitHeadings();
     initParticles();
-    setupElectricBorders();
   }
   if (document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(boot);
   else boot();
+})();
+</script>
+
+<!-- ═════════ CODROPS 3DCarousel — js/index.js verbatim, with documented adaptations:
+     1. ScrollSmoother → Lenis bridge (`smoother.paused` maps to lenis.stop/start);
+        ScrollSmoother.create removed because the page already smooth-scrolls with Lenis.
+     2. preloadImages (js/utils.js) inlined — module imports need no build step this way.
+     3. Cards use CSS gradients via the same `--img` custom property instead of webp files. ═════════ -->
+<script>
+(() => {
+  if (!(window.gsap && window.ScrollTrigger && window.SplitText && window.ScrollToPlugin)) return; // CDN failed: cards still render via setup below if possible
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Inlined from js/utils.js — resolves when background images are loaded
+  const preloadImages = (selector = 'img') => {
+    return new Promise((resolve) => {
+      if (!window.imagesLoaded) { resolve(); return; }
+      imagesLoaded(document.querySelectorAll(selector), { background: true }, resolve);
+    });
+  };
+
+  // Adaptation 1: the page smooth-scrolls with Lenis (see main script), so ScrollSmoother
+  // is not created. The `smoother` API surface used below is bridged to Lenis.
+  const smoother = {
+    paused(p) {
+      const l = window.__lenis;
+      if (!l) return;
+      p ? l.stop() : l.start();
+    }
+  };
+
+  // Reference to the container that wraps all the 3D scene elements
+  const sceneWrapper = document.querySelector('.scene-wrapper');
+
+  // Global flag to prevent multiple animations from overlapping or triggering at once
+  let isAnimating = false;
+
+  // A Map to store SplitText instances keyed by DOM elements (used for animating text characters)
+  const splitMap = new Map();
+
+  const getCarouselCellTransforms = (count, radius) => {
+    const angleStep = 360 / count; // Divide 360° by number of cells to get angle step
+    return Array.from({ length: count }, (_, i) => {
+      const angle = i * angleStep;
+      return `rotateY(${angle}deg) translateZ(${radius}px)`; // 3D rotation + translation
+    });
+  };
+
+  const setupCarouselCells = (carousel) => {
+    const wrapper = carousel.closest('.scene');
+    const radius = parseFloat(wrapper.dataset.radius) || 500; // Read radius from data attribute or default to 500
+    const cells = carousel.querySelectorAll('.carousel__cell');
+
+    const transforms = getCarouselCellTransforms(cells.length, radius); // Get transform strings
+    cells.forEach((cell, i) => {
+      cell.style.transform = transforms[i]; // Apply transform to each cell
+    });
+  };
+
+  const createScrollAnimation = (carousel) => {
+    const wrapper = carousel.closest('.scene');
+    const cards = carousel.querySelectorAll('.card');
+    const titleSpan = wrapper.querySelector('.scene__title span');
+    const split = splitMap.get(titleSpan);
+    const chars = split?.chars || [];
+
+    // Create scroll-driven timeline
+    carousel._timeline = gsap.timeline({
+      defaults: { ease: 'sine.inOut' },
+      scrollTrigger: {
+        trigger: wrapper,
+        start: 'top bottom', // Start when top of wrapper hits bottom of viewport
+        end: 'bottom top', // End when bottom of wrapper hits top of viewport
+        scrub: true, // Smooth animation based on scroll position
+      },
+    });
+
+    carousel._timeline
+      .fromTo(carousel, { rotationY: 0 }, { rotationY: -180 }, 0) // Rotate carousel horizontally
+      .fromTo(
+        carousel,
+        { rotationZ: 3, rotationX: 3 },
+        { rotationZ: -3, rotationX: -3 },
+        0
+      ) // Subtle 3D tilt
+      .fromTo(
+        cards,
+        { filter: 'brightness(250%)' },
+        { filter: 'brightness(80%)', ease: 'power3' },
+        0
+      ) // Brightness dimming
+      .fromTo(cards, { rotationZ: 10 }, { rotationZ: -10, ease: 'none' }, 0); // Rotate cards around Z
+
+    // Animate title characters in on scroll
+    if (chars.length > 0) {
+      animateChars(chars, 'in', {
+        scrollTrigger: {
+          trigger: wrapper,
+          start: 'top center',
+          toggleActions: 'play none none reverse',
+        },
+      });
+    }
+
+    return carousel._timeline;
+  };
+
+  const initTextsSplit = () => {
+    document
+      .querySelectorAll(
+        '.scene__title span, .preview__title span, .preview__close'
+      )
+      .forEach((span) => {
+        const split = SplitText.create(span, {
+          type: 'chars', // Split by characters
+          charsClass: 'char', // Assign class to each character
+          autoSplit: true, // Revert and re-split whenever the fonts finish loading
+        });
+        splitMap.set(span, split); // Store split instance for reuse
+      });
+  };
+
+  const getInterpolatedRotation = (progress) => ({
+    rotationY: gsap.utils.interpolate(0, -180, progress), // Horizontal spin from 0° to -180°
+    rotationX: gsap.utils.interpolate(3, -3, progress), // Tilt forward/backward
+    rotationZ: gsap.utils.interpolate(3, -3, progress), // Z-axis twist
+  });
+
+  const animateGridItemIn = (el, dx, dy, rotationY, delay) => {
+    gsap.fromTo(
+      el,
+      {
+        transformOrigin: `% 50% ${dx > 0 ? -dx * 0.8 : dx * 0.8}px`,
+        autoAlpha: 0,
+        y: dy * 0.5, // Slight vertical offset
+        scale: 0.5, // Scaled down
+        rotationY: dx < 0 ? rotationY : rotationY, // Rotate in from left/right
+      },
+      {
+        y: 0,
+        scale: 1,
+        rotationY: 0,
+        autoAlpha: 1,
+        duration: 0.4,
+        ease: 'sine',
+        delay: delay + 0.1,
+      }
+    );
+
+    gsap.fromTo(
+      el,
+      { z: -3500 },
+      {
+        z: 0,
+        duration: 0.3,
+        ease: 'expo',
+        delay,
+      }
+    );
+  };
+
+  const animateGridItemOut = (
+    el,
+    dx,
+    dy,
+    rotationY,
+    delay,
+    isLast,
+    onComplete
+  ) => {
+    gsap.to(el, {
+      startAt: {
+        transformOrigin: `50% 50% ${dx > 0 ? -dx * 0.8 : dx * 0.8}px`,
+      },
+      y: dy * 0.4,
+      rotationY: dx < 0 ? rotationY : rotationY,
+      scale: 0.4,
+      autoAlpha: 0,
+      duration: 0.4,
+      ease: 'sine.in',
+      delay,
+    });
+    gsap.to(el, {
+      z: -3500,
+      duration: 0.4,
+      ease: 'expo.in',
+      delay: delay + 0.9,
+      onComplete: isLast ? onComplete : undefined, // Call onComplete only for the last item
+    });
+  };
+
+  const animateGridItems = ({
+    items,
+    centerX,
+    centerY,
+    direction = 'in',
+    onComplete,
+  }) => {
+    const itemData = Array.from(items).map((el) => {
+      const rect = el.getBoundingClientRect();
+      const elCenterX = rect.left + rect.width / 2;
+      const elCenterY = rect.top + rect.height / 2;
+      const dx = centerX - elCenterX;
+      const dy = centerY - elCenterY;
+      const dist = Math.hypot(dx, dy); // Euclidean distance from center
+      const isLeft = elCenterX < centerX;
+      return { el, dx, dy, dist, isLeft };
+    });
+
+    const maxDist = Math.max(...itemData.map((d) => d.dist)); // Farthest distance
+    const totalStagger = 0.025 * (itemData.length - 1); // Total stagger duration
+
+    let latest = { delay: -1, el: null }; // Track latest delay item
+
+    itemData.forEach(({ el, dx, dy, dist, isLeft }) => {
+      const norm = maxDist ? dist / maxDist : 0; // Normalize distance
+      const exponential = Math.pow(direction === 'in' ? 1 - norm : norm, 1); // Easing
+      const delay = exponential * totalStagger;
+      const rotationY = isLeft ? 100 : -100; // Directional rotation
+
+      if (direction === 'in') {
+        animateGridItemIn(el, dx, dy, rotationY, delay);
+      } else {
+        if (delay > latest.delay) {
+          latest = { delay, el };
+        }
+        animateGridItemOut(el, dx, dy, rotationY, delay, false, onComplete);
+      }
+    });
+
+    if (direction === 'out' && latest.el) {
+      const { el, dx, dy, isLeft } = itemData.find((d) => d.el === latest.el);
+      const rotationY = isLeft ? 100 : -100;
+      animateGridItemOut(el, dx, dy, rotationY, latest.delay, true, onComplete);
+    }
+  };
+
+  const animatePreviewGridIn = (preview) => {
+    const items = preview.querySelectorAll('.grid__item');
+    gsap.set(items, { clearProps: 'all' });
+    animateGridItems({
+      items,
+      centerX: window.innerWidth / 2,
+      centerY: window.innerHeight / 2,
+      direction: 'in',
+    });
+  };
+
+  const animatePreviewGridOut = (preview) => {
+    const items = preview.querySelectorAll('.grid__item');
+    const onComplete = () =>
+      gsap.set(preview, { pointerEvents: 'none', autoAlpha: 0 });
+    animateGridItems({
+      items,
+      centerX: window.innerWidth / 2,
+      centerY: window.innerHeight / 2,
+      direction: 'out',
+      onComplete,
+    });
+  };
+
+  const getSceneElementsFromTitle = (titleEl) => {
+    const wrapper = titleEl.closest('.scene'); // Scene container
+    const carousel = wrapper?.querySelector('.carousel'); // Carousel in the scene
+    const cards = carousel?.querySelectorAll('.card'); // All card elements
+    const span = titleEl.querySelector('span'); // Title span
+    const chars = splitMap.get(span)?.chars || []; // SplitText chars
+    return { wrapper, carousel, cards, span, chars };
+  };
+
+  const getSceneElementsFromPreview = (previewEl) => {
+    const previewId = `#${previewEl.id}`;
+    const titleLink = document.querySelector(
+      `.scene__title a[href="${previewId}"]`
+    );
+    const titleEl = titleLink?.closest('.scene__title'); // Corresponding title element
+    return { ...getSceneElementsFromTitle(titleEl), titleEl };
+  };
+
+  const animateChars = (chars, direction = 'in', opts = {}) => {
+    const base = {
+      autoAlpha: direction === 'in' ? 1 : 0,
+      duration: 0.02,
+      ease: 'none',
+      stagger: { each: 0.04, from: direction === 'in' ? 'start' : 'end' },
+      ...opts,
+    };
+
+    gsap.fromTo(chars, { autoAlpha: direction === 'in' ? 0 : 1 }, base);
+  };
+
+  const animatePreviewTexts = (
+    preview,
+    direction = 'in',
+    selector = '.preview__title span, .preview__close'
+  ) => {
+    preview.querySelectorAll(selector).forEach((el) => {
+      const chars = splitMap.get(el)?.chars || [];
+      animateChars(chars, direction);
+    });
+  };
+
+  const activatePreviewFromCarousel = (e) => {
+    e.preventDefault();
+    if (isAnimating) return;
+    isAnimating = true;
+
+    const titleEl = e.currentTarget;
+    const { wrapper, carousel, cards, chars } =
+      getSceneElementsFromTitle(titleEl);
+
+    // Calculate scroll position to center the scene
+    const offsetTop = wrapper.getBoundingClientRect().top + window.scrollY;
+    const targetY = offsetTop - window.innerHeight / 2 + wrapper.offsetHeight / 2;
+
+    // Temporarily disable scroll-based animations
+    ScrollTrigger.getAll().forEach((t) => t.disable(false));
+
+    gsap
+      .timeline({
+        defaults: { duration: 1.5, ease: 'power2.inOut' },
+        onComplete: () => {
+          isAnimating = false;
+          ScrollTrigger.getAll().forEach((t) => t.enable());
+          carousel._timeline.scrollTrigger.scroll(targetY);
+        },
+      })
+      .to(window, {
+        onStart: () => {
+          lockUserScroll();
+        },
+        onComplete: () => {
+          unlockUserScroll();
+          smoother.paused(true);
+        },
+        scrollTo: { y: targetY, autoKill: true },
+      })
+      .to(
+        chars,
+        {
+          autoAlpha: 0,
+          duration: 0.02,
+          ease: 'none',
+          stagger: { each: 0.04, from: 'end' },
+        },
+        0
+      )
+      .to(carousel, { rotationX: 90, rotationY: -360, z: -2000 }, 0)
+      .to(
+        carousel,
+        {
+          duration: 2.5,
+          ease: 'power3.inOut',
+          z: 1500,
+          rotationZ: 270,
+          onComplete: () => gsap.set(sceneWrapper, { autoAlpha: 0 }),
+        },
+        0.7
+      )
+      .to(cards, { rotationZ: 0 }, 0)
+      .add(() => {
+        const previewSelector = titleEl.querySelector('a')?.getAttribute('href');
+        const preview = document.querySelector(previewSelector);
+        gsap.set(preview, { pointerEvents: 'auto', autoAlpha: 1 });
+        animatePreviewGridIn(preview);
+        animatePreviewTexts(preview, 'in');
+      }, '<+=1.9');
+  };
+
+  const deactivatePreviewToCarousel = (e) => {
+    if (isAnimating) return;
+    isAnimating = true;
+
+    const preview = e.currentTarget.closest('.preview');
+    if (!preview) return;
+
+    const { carousel, cards, chars } = getSceneElementsFromPreview(preview);
+
+    animatePreviewTexts(preview, 'out');
+    animatePreviewGridOut(preview);
+
+    gsap.set(sceneWrapper, { autoAlpha: 1 });
+
+    const progress = 0.5; // halfway
+
+    const { rotationX, rotationY, rotationZ } = getInterpolatedRotation(progress);
+
+    gsap
+      .timeline({
+        delay: 0.7,
+        defaults: { duration: 1.3, ease: 'expo' },
+        onComplete: () => {
+          smoother.paused(false);
+          isAnimating = false;
+        },
+      })
+      .fromTo(
+        chars,
+        { autoAlpha: 0 },
+        {
+          autoAlpha: 1,
+          duration: 0.02,
+          ease: 'none',
+          stagger: { each: 0.04, from: 'start' },
+        }
+      )
+      .fromTo(
+        carousel,
+        {
+          z: -550,
+          rotationX,
+          rotationY: -720,
+          rotationZ,
+          yPercent: 300,
+        },
+        {
+          rotationY,
+          yPercent: 0,
+        },
+        0
+      )
+      .fromTo(cards, { autoAlpha: 0 }, { autoAlpha: 1 }, 0.3);
+  };
+
+  const initEventListeners = () => {
+    document.querySelectorAll('.scene__title').forEach((title) => {
+      title.addEventListener('click', activatePreviewFromCarousel);
+    });
+
+    document.querySelectorAll('.preview__close').forEach((btn) => {
+      btn.addEventListener('click', deactivatePreviewToCarousel);
+    });
+  };
+
+  const initCarousels = () => {
+    document.querySelectorAll('.carousel').forEach((carousel) => {
+      setupCarouselCells(carousel); // Position carousel cells in 3D
+      carousel._timeline = createScrollAnimation(carousel); // Attach scroll animation timeline
+    });
+  };
+
+  function preventScroll(e) {
+    e.preventDefault();
+  }
+
+  function lockUserScroll() {
+    window.addEventListener('wheel', preventScroll, { passive: false });
+    window.addEventListener('touchmove', preventScroll, { passive: false });
+    window.addEventListener('keydown', preventArrowScroll, false);
+  }
+
+  function unlockUserScroll() {
+    window.removeEventListener('wheel', preventScroll);
+    window.removeEventListener('touchmove', preventScroll);
+    window.removeEventListener('keydown', preventArrowScroll);
+  }
+
+  function preventArrowScroll(e) {
+    const keys = [
+      'ArrowUp',
+      'ArrowDown',
+      'PageUp',
+      'PageDown',
+      'Home',
+      'End',
+      ' ',
+    ];
+    if (keys.includes(e.key)) e.preventDefault();
+  }
+
+  const init = () => {
+    // Adaptation: smaller orbit radius on narrow screens via the library's own data-radius API
+    if (window.matchMedia('(max-width: 560px)').matches) {
+      document.querySelectorAll('.scene').forEach((s) => { s.dataset.radius = '300'; });
+    }
+    initTextsSplit(); // Prepare character-level splits for animations
+    initCarousels(); // Set up carousels with transforms and scroll triggers
+    initEventListeners(); // Bind all interactive handlers
+    window.addEventListener('resize', ScrollTrigger.refresh); // Refresh triggers on resize
+  };
+
+  // Start app once images are preloaded
+  preloadImages('.grid__item-image').then(() => {
+    document.body.classList.remove('loading'); // Remove loading state from body
+    init(); // Begin initialization
+  });
 })();
 </script>
 
