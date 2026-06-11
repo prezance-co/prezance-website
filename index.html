@@ -74,7 +74,7 @@
   #spotlight {
     position: fixed;
     inset: 0;
-    z-index: 9999;
+    z-index: 9998;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -184,8 +184,8 @@
       radial-gradient(50% 60% at 80% 70%, #141414 0%, transparent 70%),
       linear-gradient(180deg, #000 0%, #0a0a0a 100%);
   }
-  /* starfield sits above the base gradient, below particles */
-  .starfield { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  /* starfield sits above the base gradient, below particles (z1 < canvas z2 < text z3) */
+  .starfield { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
   .star {
     position: absolute;
     width: 1px; height: 1px;
@@ -199,26 +199,27 @@
     to { opacity: calc(var(--o, 0.5) * 0.2); }
   }
   .moonlight {
-    position: absolute; inset: 0; z-index: 0;
+    position: absolute; inset: 0; z-index: 1;
     background: radial-gradient(ellipse 600px 400px at 85% 15%, rgba(100,140,255,0.07), transparent);
     pointer-events: none;
   }
-  /* particle text canvas — right half only, headline owns the left */
+  /* particle text canvas — full width, PREZANCE watermark renders bottom-left */
   #particle-canvas {
     position: absolute;
-    left: 50%; top: 0;
-    width: 50%;
+    left: 0; top: 0;
+    width: 100%;
     height: 100%;
     display: block;
-    z-index: 1;
+    z-index: 2;
   }
+  /* vignette below the starfield so stars stay visible */
   .hero::after {
     content: "";
-    position: absolute; inset: 0; z-index: 1;
-    background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100%);
+    position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%);
     pointer-events: none;
   }
-  .hero .wrap { position: relative; z-index: 2; width: 100%; padding-top: 80px; padding-bottom: 80px; }
+  .hero .wrap { position: relative; z-index: 3; width: 100%; padding-top: 80px; padding-bottom: 80px; }
   .hero h1 {
     font-size: clamp(44px, 8.5vw, 104px);
     font-weight: 600;
@@ -333,7 +334,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    cursor: grab;
+    touch-action: pan-y; /* vertical page scroll still works over the 100vh scene */
+    user-select: none;
+    -webkit-user-select: none;
   }
+  .scene.grabbing { cursor: grabbing; }
   .scene__title {
     position: relative;
     z-index: 10;
@@ -368,6 +374,15 @@
     transform-style: preserve-3d;
     will-change: transform;
     transform: translateZ(-550px) rotateY(0deg);
+  }
+  /* drag layer: carries pointer-drag rotation so it never fights the scroll-scrub
+     timeline that GSAP runs on .carousel itself */
+  .carousel__drag {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    will-change: transform;
+    touch-action: none; /* the card orbit itself is the draggable element */
   }
   .carousel__cell {
     position: absolute;
@@ -732,6 +747,7 @@
         <a href="#preview-1"><span>Choose your design</span></a>
       </h2>
       <div class="carousel">
+        <div class="carousel__drag">
         <div class="carousel__cell">
           <div class="card template-card" style="--img: linear-gradient(150deg, #0b1f3a, #1a4a7a)">
             <div class="card__face card__face--front"><div class="card__label"><div class="name">Novena</div><div class="cat">Clinical Authority</div></div></div>
@@ -768,8 +784,9 @@
             <div class="card__face card__face--back"><div class="card__label"><div class="name">Lex</div><div class="cat">Legal</div></div></div>
           </div>
         </div>
+        </div>
       </div>
-      <div class="scene__hint">Scroll to rotate · click title to browse</div>
+      <div class="scene__hint">Drag or scroll to rotate · click title to browse</div>
     </div>
   </div>
   <!-- / scene-wrapper -->
@@ -1087,17 +1104,17 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H, false);
 
-    // sample "PREZANCE" pixels from an offscreen 2D canvas (middle-right, slight downward offset)
+    // sample "PREZANCE" pixels from an offscreen 2D canvas — large dim watermark, bottom-left
     function sampleText() {
       const off = document.createElement("canvas");
       off.width = W; off.height = H;
       const ctx = off.getContext("2d");
-      const fs = Math.min(W / 5.6, 150);
+      const fs = Math.min(W / 5.2, 220); // dramatic watermark scale
       ctx.fillStyle = "#fff";
       ctx.font = `700 ${fs}px Inter, system-ui, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("PREZANCE", W / 2, W < 420 ? H * 0.68 : H * 0.55); // clears the subheading on narrow screens
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText("PREZANCE", W * 0.03, H * 0.92);
       const data = ctx.getImageData(0, 0, W, H).data;
       const pts = [];
       const step = 2;
@@ -1144,7 +1161,7 @@
       sizeAttenuation: false,
       vertexColors: true,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.15, // dim watermark — headline (z3) reads on top
       depthTest: false,
       blending: THREE.AdditiveBlending
     });
@@ -1233,9 +1250,9 @@
   if (!isTouch) {
     const spot = document.getElementById("spotlight");
     const label = document.getElementById("cursor-label");
+    /* exact-match map: ONLY these three element kinds get a label */
     const cursorMap = [
       [".template-card", "Explore →"],
-      [".grid__item", "Explore →"],
       [".cta-button", "Start →"],
       [".process-step", "Read →"]
     ];
@@ -1246,8 +1263,10 @@
       pulled: false
     }));
 
+    let spotLogged = false;
     window.addEventListener("mousemove", (e) => {
-      spot.style.background = `radial-gradient(circle 300px at ${e.clientX}px ${e.clientY}px, rgba(255,255,255,0.04), transparent)`;
+      if (!spotLogged) { console.log("[spotlight] mousemove handler active — background updating"); spotLogged = true; }
+      spot.style.background = `radial-gradient(circle 300px at ${e.clientX}px ${e.clientY}px, rgba(255,255,255,0.08), transparent)`;
       spot.classList.add("on");
 
       label.style.left = e.clientX + "px";
@@ -1782,6 +1801,40 @@
     if (keys.includes(e.key)) e.preventDefault();
   }
 
+  // Adaptation: pointer drag + trackpad swipe rotate the carousel. The rotation is
+  // applied to the inner .carousel__drag layer so it composes with (and never fights)
+  // the scroll-scrubbed timeline that GSAP runs on .carousel itself.
+  const initDragRotation = () => {
+    document.querySelectorAll('.scene').forEach((sceneEl) => {
+      const dragEl = sceneEl.querySelector('.carousel__drag');
+      if (!dragEl) return;
+      let dragging = false, lastX = 0, rot = 0;
+      sceneEl.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        lastX = e.clientX;
+        sceneEl.classList.add('grabbing');
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - lastX;
+        lastX = e.clientX;
+        rot += dx * 0.35;
+        gsap.set(dragEl, { rotationY: rot });
+      }, { passive: true });
+      window.addEventListener('pointerup', () => {
+        dragging = false;
+        sceneEl.classList.remove('grabbing');
+      });
+      /* trackpad horizontal swipe; vertical wheel passes through to page scroll */
+      sceneEl.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+        e.preventDefault();
+        rot -= e.deltaX * 0.25;
+        gsap.set(dragEl, { rotationY: rot });
+      }, { passive: false });
+    });
+  };
+
   const init = () => {
     // Adaptation: smaller orbit radius on narrow screens via the library's own data-radius API
     if (window.matchMedia('(max-width: 560px)').matches) {
@@ -1790,6 +1843,7 @@
     initTextsSplit(); // Prepare character-level splits for animations
     initCarousels(); // Set up carousels with transforms and scroll triggers
     initEventListeners(); // Bind all interactive handlers
+    initDragRotation(); // Pointer drag + trackpad swipe rotation
     window.addEventListener('resize', ScrollTrigger.refresh); // Refresh triggers on resize
   };
 
