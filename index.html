@@ -1111,9 +1111,9 @@
       const baselineY = capTop + fs * capRatio;            // alphabetic baseline
       ctx.fillStyle = "#fff";
       ctx.font = `700 ${fs}px Inter, system-ui, sans-serif`;
-      ctx.textAlign = "left";
+      ctx.textAlign = "center";
       ctx.textBaseline = "alphabetic";
-      ctx.fillText("PREZANCE", W * 0.03, baselineY);
+      ctx.fillText("PREZANCE", W * 0.5, baselineY);
       const data = ctx.getImageData(0, 0, W, H).data;
       const pts = [];
       const step = 2;
