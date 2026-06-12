@@ -1,0 +1,147 @@
+import { MANIFEST, CAT_LABEL, routeFor } from '../../manifest.js';
+
+export function initCarousel() {
+  const drag = document.getElementById('carousel-drag');
+  if (!drag) return;
+  const carousel = drag.closest('.carousel');
+  const scene = drag.closest('.scene');
+  const filtersBar = document.getElementById('template-filters');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hasGSAP = !!(window.gsap && window.ScrollTrigger);
+
+  // MANIFEST · CAT_LABEL · routeFor are imported from ../../manifest.js
+
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // Card face background: the template thumbnail layered over its gradient, so the
+  // gradient shows through while the image loads or if it 404s. Falls back to the
+  // bare gradient for entries without a thumb.
+  const faceImg = (t) => {
+    const grad = `linear-gradient(150deg, ${t.a}, ${t.b})`;
+    return t.thumb ? `url('/${t.thumb}'), ${grad}` : grad;
+  };
+  const cardHTML = (t) => {
+    const label = esc(t.label), cat = esc(CAT_LABEL[t.category] || t.category);
+    const lbl = `<div class="card__label"><div class="name">${label}</div><div class="cat">${cat}</div></div>`;
+    return `<div class="carousel__cell">
+      <div class="card template-card" style="--img: ${faceImg(t)}">
+        <div class="card__face card__face--front">
+          <button class="card__explore" type="button" data-route="${esc(routeFor(t))}">Explore →</button>
+          ${lbl}
+        </div>
+        <div class="card__face card__face--back">${lbl}</div>
+      </div>
+    </div>`;
+  };
+
+  const isNarrow = () => window.matchMedia('(max-width: 560px)').matches;
+  function radiusFor(n) {
+    const cardW = isNarrow() ? 200 : 280;
+    const gap = isNarrow() ? 20 : 36;
+    const minR = isNarrow() ? 260 : 380;
+    if (n <= 1) return minR;
+    return Math.max(minR, Math.round((cardW / 2 + gap) / Math.tan(Math.PI / n)));
+  }
+
+  let cells = [];
+  let dragRot = 0;
+  let tl = null;
+
+  function setRot(el, deg) {
+    if (hasGSAP) gsap.set(el, { rotationY: deg });
+    else el.style.transform = `rotateY(${deg}deg)`;
+  }
+
+  function layout() {
+    const n = cells.length;
+    if (!n) return;
+    const radius = radiusFor(n);
+    const step = 360 / n;
+    cells.forEach((cell, i) => {
+      cell.style.transform = `rotateY(${i * step}deg) translateZ(${radius}px)`;
+    });
+    // base depth so the front-facing card sits near the camera plane
+    const baseZ = -(radius - 40);
+    if (hasGSAP) gsap.set(carousel, { z: baseZ, rotationX: 0, rotationY: 0, rotationZ: 0 });
+    else carousel.style.transform = `translateZ(${baseZ}px) rotateY(0deg)`;
+    dragRot = 0;
+    setRot(drag, 0);
+  }
+
+  function buildTimeline() {
+    if (tl) { if (tl.scrollTrigger) tl.scrollTrigger.kill(); tl.kill(); tl = null; }
+    if (!hasGSAP || reduced) return;
+    const cardEls = drag.querySelectorAll('.card');
+    tl = gsap.timeline({
+      defaults: { ease: 'sine.inOut' },
+      scrollTrigger: { trigger: '#templates', start: 'top bottom', end: 'bottom top', scrub: true }
+    });
+    tl.fromTo(carousel, { rotationY: 0 }, { rotationY: -180 }, 0)
+      .fromTo(carousel, { rotationZ: 3, rotationX: 3 }, { rotationZ: -3, rotationX: -3 }, 0)
+      .fromTo(cardEls, { filter: 'brightness(250%)' }, { filter: 'brightness(80%)', ease: 'power3' }, 0)
+      .fromTo(cardEls, { rotationZ: 10 }, { rotationZ: -10, ease: 'none' }, 0);
+  }
+
+  function render(filter, animate) {
+    const subset = MANIFEST.filter((t) => filter === 'all' || t.category === filter);
+    const doSwap = () => {
+      drag.innerHTML = subset.map(cardHTML).join('');
+      cells = Array.from(drag.querySelectorAll('.carousel__cell'));
+      layout();
+      buildTimeline();
+      if (hasGSAP) ScrollTrigger.refresh();
+      if (animate && hasGSAP && !reduced) {
+        gsap.fromTo(cells, { autoAlpha: 0, scale: 0.85 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'power2.out', stagger: 0.03 });
+      }
+    };
+    if (animate && hasGSAP && !reduced && cells.length) {
+      gsap.to(drag, { autoAlpha: 0, duration: 0.25, ease: 'power1.in', onComplete: () => { gsap.set(drag, { autoAlpha: 1 }); doSwap(); } });
+    } else {
+      doSwap();
+    }
+  }
+
+  // Explore → navigate to the template/demo route (handled by the global router
+  // click delegation via [data-route]); just keep the drag from hijacking the press.
+  drag.addEventListener('pointerdown', (e) => { if (e.target.closest('[data-route]')) e.stopPropagation(); });
+
+  // Category filter pills
+  if (filtersBar) {
+    filtersBar.addEventListener('click', (e) => {
+      const pill = e.target.closest('.filter-pill');
+      if (!pill) return;
+      filtersBar.querySelectorAll('.filter-pill').forEach((p) => { p.classList.remove('active'); p.setAttribute('aria-selected', 'false'); });
+      pill.classList.add('active');
+      pill.setAttribute('aria-selected', 'true');
+      render(pill.dataset.filter, true);
+    });
+  }
+
+  // Drag + trackpad rotation on the .carousel__drag layer (composes with the scroll-scrub on .carousel)
+  let dragging = false, lastX = 0;
+  scene.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('[data-route]')) return; // let the button handle its own click
+    dragging = true; lastX = e.clientX; scene.classList.add('grabbing');
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX; lastX = e.clientX;
+    dragRot += dx * 0.35;
+    setRot(drag, dragRot);
+  }, { passive: true });
+  window.addEventListener('pointerup', () => { dragging = false; scene.classList.remove('grabbing'); });
+  scene.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical scroll passes through to the page
+    e.preventDefault();
+    dragRot -= e.deltaX * 0.25;
+    setRot(drag, dragRot);
+  }, { passive: false });
+
+  let rsT;
+  window.addEventListener('resize', () => {
+    clearTimeout(rsT);
+    rsT = setTimeout(() => { layout(); if (hasGSAP) ScrollTrigger.refresh(); }, 200);
+  });
+
+  // initial render — All (no transition)
+  render('all', false);
+}

@@ -1,0 +1,92 @@
+/* Page-transition + preview-layer styles. The home page's own styles stay inline in index.html. */
+
+/* Lock page scroll while a full-screen preview is open. */
+body.preview-open { overflow: hidden; }
+
+/* Full-screen preview layer (template/demo iframe + back bar). Sits above every home effect. */
+.preview-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  will-change: transform, opacity;
+}
+
+.preview-bar {
+  flex: 0 0 52px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  background: rgba(0, 0, 0, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.preview-back {
+  font: 500 13px/1 "JetBrains Mono", ui-monospace, monospace;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 9px 15px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.preview-back:hover { background: rgba(255, 255, 255, 0.18); transform: translateX(-2px); }
+.preview-back:active { transform: translateX(0); }
+
+.preview-title {
+  font: 500 13px/1 "JetBrains Mono", ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.preview-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+/* ───── Kinetic typography transition layer ───── */
+/* Transient, top-most layer that renders the exploding/converging template name. */
+.kinetic-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.kinetic-bg {
+  position: absolute;
+  inset: 0;
+  background: #000;
+}
+
+.kinetic-text {
+  position: relative;
+  margin: 0;
+  padding: 0 5vw;
+  max-width: 94vw;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.75rem, 12vw, 11rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.kinetic-text .kchar {
+  display: inline-block;
+  will-change: transform, filter, opacity;
+}

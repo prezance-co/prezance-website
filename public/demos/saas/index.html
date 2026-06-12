@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowSync — Your team, in sync</title>
+<meta name="description" content="FlowSync keeps every project, decision and deadline in one fast, focused workspace. Your team, in sync." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237C6CFF'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' fill='%23ffffff' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<style>
+  :root{
+    --bg:#07070B; --bg-2:#0C0C13; --panel:#11111A; --panel-2:#161624;
+    --line:#23233297; --line-hard:#2A2A3C;
+    --txt:#F2F2F8; --txt-2:#9C9CB0; --txt-3:#62627A;
+    --vio:#7C6CFF; --cyan:#39D2C8; --pink:#FF6AA9;
+    --disp:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);background:var(--bg);color:var(--txt);font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  h1,h2,h3{font-family:var(--disp);letter-spacing:-.03em;font-weight:600}
+  .mono{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3)}
+  .grad-text{background:linear-gradient(96deg,var(--vio),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+  /* grain + vignette */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:48px;padding:0 26px;border-radius:12px;font-weight:500;font-size:14.5px;cursor:pointer;border:1px solid transparent;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .25s,border-color .25s;will-change:transform}
+  .btn-grad{background:linear-gradient(96deg,var(--vio),#5A8DFF);color:#fff;box-shadow:0 0 0 1px #ffffff14 inset,0 10px 34px -12px #7C6CFF80}
+  .btn-grad:hover{transform:translateY(-2px);box-shadow:0 0 0 1px #ffffff22 inset,0 18px 44px -12px #7C6CFFA0}
+  .btn-ghost{border-color:var(--line-hard);color:var(--txt)}
+  .btn-ghost:hover{background:#ffffff08;transform:translateY(-2px)}
+  /* nav */
+  nav{position:fixed;inset:14px 0 auto 0;z-index:100;pointer-events:none}
+  nav .pill{pointer-events:auto;max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:62px;padding:0 12px 0 24px;border-radius:18px;border:1px solid transparent;transition:background .35s,border-color .35s,backdrop-filter .35s}
+  nav.on .pill{background:#0C0C13C9;border-color:var(--line-hard);backdrop-filter:blur(16px)}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:-.02em}
+  .logo .mk{width:26px;height:26px;border-radius:8px;background:conic-gradient(from 210deg,var(--vio),var(--cyan),var(--vio));position:relative}
+  .logo .mk::after{content:"";position:absolute;inset:7px;border-radius:4px;background:var(--bg)}
+  nav .links{display:flex;align-items:center;gap:4px}
+  nav .links a.l{font-size:14px;color:var(--txt-2);padding:9px 14px;border-radius:10px;transition:color .2s,background .2s}
+  nav .links a.l:hover{color:var(--txt);background:#ffffff0A}
+  nav .links .btn{height:40px;padding:0 18px;font-size:13.5px;border-radius:10px}
+  @media(max-width:840px){nav .links a.l{display:none}}
+  /* hero */
+  .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:130px 0 0}
+  .orb{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;will-change:transform}
+  .orb.a{width:46vw;height:46vw;left:-12vw;top:-14vw;background:radial-gradient(circle,#7C6CFF33,transparent 65%)}
+  .orb.b{width:38vw;height:38vw;right:-10vw;top:6vh;background:radial-gradient(circle,#39D2C826,transparent 65%)}
+  .orb.c{width:30vw;height:30vw;left:32vw;bottom:-12vw;background:radial-gradient(circle,#FF6AA91d,transparent 65%)}
+  .gridlines{position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(#ffffff07 1px,transparent 1px),linear-gradient(90deg,#ffffff07 1px,transparent 1px);
+    background-size:72px 72px;mask-image:radial-gradient(80% 60% at 50% 38%,#000 30%,transparent 75%)}
+  .hero .tag{position:relative;display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line-hard);background:#ffffff07;border-radius:999px;padding:8px 16px;font-size:13px;color:var(--txt-2);margin-bottom:34px}
+  .hero .tag .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+  .hero h1{position:relative;font-size:clamp(54px,8.6vw,116px);line-height:.98;letter-spacing:-.045em;font-weight:700;max-width:12ch;margin:0 auto}
+  .hero h1 .row{display:block;overflow:hidden}
+  .hero h1 .row span{display:inline-block;will-change:transform}
+  .hero .sub{position:relative;margin:30px auto 0;font-size:clamp(16px,2vw,19px);color:var(--txt-2);max-width:52ch}
+  .hero .cta{position:relative;display:flex;gap:14px;justify-content:center;margin-top:40px;flex-wrap:wrap}
+  .hero .micro{position:relative;margin-top:18px;font-size:13px;color:var(--txt-3)}
+  /* product window */
+  .window{position:relative;max-width:1020px;margin:72px auto 0;border-radius:18px;border:1px solid var(--line-hard);
+    background:linear-gradient(180deg,#13131E,#0D0D15);box-shadow:0 -1px 0 #ffffff14 inset,0 60px 120px -40px #000000E6,0 30px 80px -30px #7C6CFF30;
+    overflow:hidden;will-change:transform}
+  .window .bar{display:flex;align-items:center;gap:8px;height:46px;padding:0 18px;border-bottom:1px solid var(--line)}
+  .window .bar i{width:10px;height:10px;border-radius:50%;background:#ffffff1c}
+  .window .bar .addr{margin-left:14px;flex:1;max-width:340px;height:26px;border-radius:7px;background:#ffffff0A;display:flex;align-items:center;padding:0 12px;font-family:var(--mono);font-size:11px;color:var(--txt-3)}
+  .app{display:grid;grid-template-columns:208px 1fr;min-height:430px}
+  @media(max-width:760px){.app{grid-template-columns:1fr}.app .side{display:none}}
+  .app .side{border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
+  .app .side .it{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13px;color:var(--txt-2)}
+  .app .side .it.on{background:#7C6CFF1d;color:var(--txt)}
+  .app .side .it .ic{width:14px;height:14px;border-radius:4px;background:#ffffff18}
+  .app .side .it.on .ic{background:var(--vio)}
+  .app .main{padding:24px 26px}
+  .app .main .crumb{font-family:var(--mono);font-size:11px;color:var(--txt-3);letter-spacing:.1em;text-transform:uppercase}
+  .app .main h3{font-size:21px;margin-top:8px;letter-spacing:-.02em}
+  .lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+  @media(max-width:560px){.lanes{grid-template-columns:1fr}}
+  .lane .lt{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt-2);margin-bottom:10px}
+  .lane .lt .c{font-family:var(--mono);font-size:10.5px;color:var(--txt-3);border:1px solid var(--line-hard);border-radius:6px;padding:1px 7px}
+  .tcard{background:#ffffff07;border:1px solid var(--line);border-radius:11px;padding:13px;margin-bottom:10px;transition:transform .25s,border-color .25s}
+  .tcard:hover{transform:translateY(-2px);border-color:#7C6CFF66}
+  .tcard .tt{font-size:13.5px;font-weight:500}
+  .tcard .meta{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .tcard .chip{font-family:var(--mono);font-size:10px;letter-spacing:.06em;border-radius:5px;padding:2px 7px}
+  .chip.v{background:#7C6CFF22;color:#A99DFF}.chip.c{background:#39D2C81f;color:#6FE3DB}.chip.p{background:#FF6AA922;color:#FF9AC4}
+  .tcard .av{margin-left:auto;width:20px;height:20px;border-radius:50%;background:linear-gradient(140deg,var(--vio),var(--cyan))}
+  .tcard.ghost{border-style:dashed;color:var(--txt-3);font-size:13px;display:grid;place-items:center;padding:18px;background:transparent}
+  /* logo strip */
+  .strip{padding:84px 0 10px;text-align:center}
+  .strip p{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--txt-3);margin-bottom:26px}
+  .strip .row{display:flex;gap:clamp(26px,5vw,64px);justify-content:center;flex-wrap:wrap;opacity:.55}
+  .strip .row span{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--txt-2)}
+  /* sections */
+  .band{padding:clamp(96px,12vw,150px) 0;position:relative}
+  .s-head{max-width:680px;margin:0 auto 64px;text-align:center}
+  .s-head h2{font-size:clamp(34px,4.8vw,56px);line-height:1.05}
+  .s-head p{margin-top:18px;font-size:17px;color:var(--txt-2)}
+  .s-head .mono{display:block;margin-bottom:18px}
+  /* bento features */
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+  .cell{position:relative;border:1px solid var(--line-hard);border-radius:18px;background:linear-gradient(180deg,#101019,#0B0B12);padding:30px;overflow:hidden;transition:border-color .3s,transform .3s}
+  .cell:hover{border-color:#7C6CFF55;transform:translateY(-3px)}
+  .cell::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .4s;pointer-events:none;
+    background:radial-gradient(420px 200px at var(--mx,50%) var(--my,0%),#7C6CFF14,transparent 60%)}
+  .cell:hover::before{opacity:1}
+  .cell h3{font-size:20px;letter-spacing:-.02em;margin-bottom:9px}
+  .cell p{font-size:14.5px;color:var(--txt-2);max-width:44ch}
+  .cell .art{margin-top:auto}
+  .cell.big{grid-column:span 4;min-height:300px;display:flex;flex-direction:column}
+  .cell.sm{grid-column:span 2;min-height:300px;display:flex;flex-direction:column}
+  .cell.third{grid-column:span 2;min-height:240px;display:flex;flex-direction:column}
+  @media(max-width:880px){.cell.big,.cell.sm,.cell.third{grid-column:span 6;min-height:auto}}
+  /* sync visualization inside big cell */
+  .pulse{position:relative;margin-top:28px;height:120px}
+  .pulse .ln{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line-hard)}
+  .pulse .nd{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);background:var(--panel-2);border:1px solid var(--line-hard)}
+  .pulse .nd::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--vio)}
+  .pulse .nd:nth-child(3)::after{background:var(--cyan)}
+  .pulse .nd:nth-child(4)::after{background:var(--pink)}
+  .pulse .dotmv{position:absolute;top:50%;width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 14px var(--vio);transform:translate(-50%,-50%)}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:110px;margin-top:26px}
+  .bars i{flex:1;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#7C6CFF99,#7C6CFF22);transform-origin:bottom}
+  .bars i:nth-child(2n){background:linear-gradient(180deg,#39D2C880,#39D2C81c)}
+  .keys{display:flex;gap:9px;margin-top:26px;flex-wrap:wrap}
+  .keys span{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line-hard);border-bottom-width:2.5px;border-radius:8px;padding:7px 11px;color:var(--txt-2);background:#ffffff05}
+  /* how it works */
+  .how{counter-reset:n}
+  .how .rows{max-width:880px;margin:0 auto}
+  .hrow{display:grid;grid-template-columns:120px 1fr;gap:30px;padding:44px 8px;border-top:1px solid var(--line);align-items:start}
+  .hrow:last-child{border-bottom:1px solid var(--line)}
+  .hrow .n{font-family:var(--mono);font-size:13px;color:var(--txt-3);padding-top:9px}
+  .hrow h3{font-size:clamp(22px,3vw,32px);letter-spacing:-.02em}
+  .hrow p{margin-top:10px;color:var(--txt-2);max-width:56ch;font-size:15.5px}
+  @media(max-width:640px){.hrow{grid-template-columns:1fr;gap:8px}}
+  /* pricing */
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
+  @media(max-width:880px){.plans{grid-template-columns:1fr}}
+  .plan{border:1px solid var(--line-hard);border-radius:20px;background:linear-gradient(180deg,#101019,#0B0B12);padding:32px;display:flex;flex-direction:column;transition:transform .3s,border-color .3s}
+  .plan:hover{transform:translateY(-4px)}
+  .plan.pro{border-color:#7C6CFF88;background:
+    radial-gradient(120% 90% at 50% 0%,#7C6CFF1f,transparent 55%),linear-gradient(180deg,#12121D,#0C0C14);position:relative}
+  .plan.pro::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;letter-spacing:.16em;background:linear-gradient(96deg,var(--vio),#5A8DFF);padding:5px 12px;border-radius:99px;color:#fff}
+  .plan h3{font-size:18px}
+  .plan .for{font-size:13px;color:var(--txt-3);margin-top:3px}
+  .plan .amt{font-family:var(--disp);font-size:46px;font-weight:700;letter-spacing:-.04em;margin:20px 0 2px}
+  .plan .amt small{font-size:14px;font-weight:400;color:var(--txt-3);letter-spacing:0}
+  .plan ul{list-style:none;margin:22px 0 28px;display:flex;flex-direction:column;gap:11px}
+  .plan li{display:flex;gap:10px;font-size:14px;color:var(--txt-2)}
+  .plan li::before{content:"→";color:var(--cyan)}
+  .plan .btn{margin-top:auto;width:100%}
+  /* CTA */
+  .endcta{position:relative;text-align:center;overflow:hidden;border-top:1px solid var(--line)}
+  .endcta h2{font-size:clamp(40px,7vw,84px);letter-spacing:-.045em;line-height:1;max-width:14ch;margin:0 auto}
+  .endcta p{margin:24px auto 0;color:var(--txt-2);max-width:46ch;font-size:17px}
+  .endcta .cta{display:flex;gap:14px;justify-content:center;margin-top:38px;flex-wrap:wrap}
+  /* footer */
+  footer{border-top:1px solid var(--line);padding:42px 0}
+  footer .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  footer .links{display:flex;gap:24px}
+  footer a,footer span{font-size:13.5px;color:var(--txt-3)}
+  footer a:hover{color:var(--txt)}
+  /* reveals */
+  .rv{opacity:0;transform:translateY(40px);will-change:transform,opacity}
+  @media (prefers-reduced-motion: reduce){.rv{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="pill">
+    <a class="logo" href="#top"><span class="mk"></span>FlowSync</a>
+    <div class="links">
+      <a class="l" href="#features">Features</a>
+      <a class="l" href="#how">How it works</a>
+      <a class="l" href="#pricing">Pricing</a>
+      <a class="btn btn-grad" href="#cta">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="orb a" data-depth="40"></div>
+  <div class="orb b" data-depth="-30"></div>
+  <div class="orb c" data-depth="24"></div>
+  <div class="gridlines"></div>
+
+  <div class="wrap">
+    <span class="tag rv"><span class="dot"></span>FlowSync 2.0 — now with live timelines</span>
+    <h1>
+      <span class="row"><span>Your team,</span></span>
+      <span class="row"><span class="grad-text">in sync.</span></span>
+    </h1>
+    <p class="sub rv">Projects, decisions and deadlines — one fast, focused workspace that keeps everyone moving in the same direction.</p>
+    <div class="cta rv">
+      <a class="btn btn-grad" href="#pricing">Start free — no card</a>
+      <a class="btn btn-ghost" href="#how">Watch it work ↘</a>
+    </div>
+    <div class="micro rv">Free for teams of 5 · Set up in 4 minutes</div>
+
+    <div class="window rv" id="window">
+      <div class="bar"><i></i><i></i><i></i><span class="addr">flowsync.app / spaces / product-launch</span></div>
+      <div class="app">
+        <div class="side">
+          <div class="it on"><span class="ic"></span>Product Launch</div>
+          <div class="it"><span class="ic"></span>Website Redesign</div>
+          <div class="it"><span class="ic"></span>Mobile App</div>
+          <div class="it"><span class="ic"></span>Growth Sprints</div>
+          <div class="it"><span class="ic"></span>Ops &amp; Hiring</div>
+        </div>
+        <div class="main">
+          <div class="crumb">Spaces / Product Launch / Board</div>
+          <h3>Launch — Week 6</h3>
+          <div class="lanes">
+            <div class="lane">
+              <div class="lt">Now <span class="c">3</span></div>
+              <div class="tcard"><div class="tt">Finalize onboarding flow</div><div class="meta"><span class="chip v">Design</span><span class="av"></span></div></div>
+              <div class="tcard"><div class="tt">Billing edge cases</div><div class="meta"><span class="chip c">Backend</span><span class="av"></span></div></div>
+              <div class="tcard"><div class="tt">Press kit copy</div><div class="meta"><span class="chip p">Marketing</span><span class="av"></span></div></div>
+            </div>
+            <div class="lane">
+              <div class="lt">Next <span class="c">2</span></div>
+              <div class="tcard"><div class="tt">Changelog automation</div><div class="meta"><span class="chip c">Backend</span><span class="av"></span></div></div>
+              <div class="tcard"><div class="tt">Launch-day runbook</div><div class="meta"><span class="chip v">Ops</span><span class="av"></span></div></div>
+            </div>
+            <div class="lane">
+              <div class="lt">Shipped <span class="c">14</span></div>
+              <div class="tcard"><div class="tt">Realtime sync engine</div><div class="meta"><span class="chip c">Backend</span><span class="av"></span></div></div>
+              <div class="tcard ghost">+ 12 more this sprint</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="wrap">
+    <p class="rv">Trusted by product teams at</p>
+    <div class="row rv"><span>Northwind</span><span>Lumen Labs</span><span>Halcyon</span><span>Cedarworks</span><span>Brightline</span><span>Arcadia</span></div>
+  </div>
+</div>
+
+<section class="band" id="features">
+  <div class="wrap">
+    <div class="s-head">
+      <span class="mono rv">Why FlowSync</span>
+      <h2 class="rv">Everything moves. <span class="grad-text">Nothing slips.</span></h2>
+      <p class="rv">FlowSync replaces the standup, the status doc and the “quick check-in” with one workspace that answers the question before it's asked.</p>
+    </div>
+    <div class="bento">
+      <div class="cell big rv">
+        <h3>Realtime sync, everywhere</h3>
+        <p>Edits, comments and status changes land for every teammate in under 50 ms. No refresh, no “who has the latest?”, no drift.</p>
+        <div class="art pulse" aria-hidden="true">
+          <span class="ln"></span>
+          <span class="nd" style="left:8%"></span>
+          <span class="nd" style="left:38%"></span>
+          <span class="nd" style="left:66%"></span>
+          <span class="nd" style="left:92%"></span>
+          <span class="dotmv" id="pulsedot" style="left:8%"></span>
+        </div>
+      </div>
+      <div class="cell sm rv">
+        <h3>Insight without asking</h3>
+        <p>Velocity, load and risk — computed live from real work, not weekly guesses.</p>
+        <div class="art bars" aria-hidden="true"><i style="height:34%"></i><i style="height:58%"></i><i style="height:42%"></i><i style="height:76%"></i><i style="height:54%"></i><i style="height:88%"></i><i style="height:66%"></i></div>
+      </div>
+      <div class="cell third rv">
+        <h3>Keyboard-first speed</h3>
+        <p>Every action is two keystrokes away. Your mouse will feel neglected.</p>
+        <div class="art keys" aria-hidden="true"><span>⌘K</span><span>A — assign</span><span>S — status</span><span>D — due</span></div>
+      </div>
+      <div class="cell third rv">
+        <h3>Automations in plain words</h3>
+        <p>“When design approves, notify engineering and start the build timer.” Type it. It runs.</p>
+      </div>
+      <div class="cell third rv">
+        <h3>Private by default</h3>
+        <p>End-to-end encryption at rest and in flight. SSO, SCIM and audit logs on every paid plan.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band how" id="how" style="background:var(--bg-2);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="s-head">
+      <span class="mono rv">How it works</span>
+      <h2 class="rv">Three steps to <span class="grad-text">flow.</span></h2>
+    </div>
+    <div class="rows">
+      <div class="hrow rv">
+        <div class="n">/ 01</div>
+        <div><h3>Bring the work in</h3><p>Import from your current tracker in one click, or start from a template. History, assignees and comments come along intact.</p></div>
+      </div>
+      <div class="hrow rv">
+        <div class="n">/ 02</div>
+        <div><h3>Shape your flow</h3><p>Define the stages your work really moves through, wire up plain-language automations, and set the cadence for digests.</p></div>
+      </div>
+      <div class="hrow rv">
+        <div class="n">/ 03</div>
+        <div><h3>Ship in sync</h3><p>Everyone sees the same truth at the same moment. Standups become optional; momentum becomes the default.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="pricing">
+  <div class="wrap">
+    <div class="s-head">
+      <span class="mono rv">Pricing</span>
+      <h2 class="rv">Simple, like it should be.</h2>
+      <p class="rv">Start free. Scale when your team does. Leave whenever — your data exports in one click.</p>
+    </div>
+    <div class="plans">
+      <div class="plan rv">
+        <h3>Starter</h3><div class="for">For small teams finding their rhythm</div>
+        <div class="amt">$0<small> / forever</small></div>
+        <ul><li>Up to 5 teammates</li><li>Unlimited tasks &amp; boards</li><li>2 active spaces</li><li>Community support</li></ul>
+        <a class="btn btn-ghost" href="#cta">Start free</a>
+      </div>
+      <div class="plan pro rv">
+        <h3>Pro</h3><div class="for">For teams that ship every week</div>
+        <div class="amt">$10<small> / user / month</small></div>
+        <ul><li>Everything in Starter</li><li>Live timelines &amp; automations</li><li>Insights &amp; load balancing</li><li>SSO, SCIM &amp; audit logs</li><li>Priority support</li></ul>
+        <a class="btn btn-grad" href="#cta">Start 14-day trial</a>
+      </div>
+      <div class="plan rv">
+        <h3>Scale</h3><div class="for">For organizations with guardrails</div>
+        <div class="amt">Custom</div>
+        <ul><li>Everything in Pro</li><li>Dedicated environment</li><li>Custom data residency</li><li>Named success engineer</li></ul>
+        <a class="btn btn-ghost" href="#cta">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band endcta" id="cta">
+  <div class="orb a" style="left:auto;right:-16vw;top:auto;bottom:-20vw" data-depth="30"></div>
+  <div class="wrap">
+    <h2 class="rv">Stop syncing up. <span class="grad-text">Stay in sync.</span></h2>
+    <p class="rv">Join 12,000+ teams who replaced status meetings with momentum.</p>
+    <div class="cta rv">
+      <a class="btn btn-grad" href="#top">Start free — no card</a>
+      <a class="btn btn-ghost" href="#pricing">See pricing</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="logo" href="#top" style="font-size:16px"><span class="mk" style="width:20px;height:20px"></span>FlowSync</a>
+    <div class="links">
+      <a href="#features">Features</a><a href="#how">How it works</a><a href="#pricing">Pricing</a>
+    </div>
+    <span>© 2026 FlowSync — Your team, in sync.</span>
+  </div>
+</footer>
+
+<script>
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* Lenis smooth scroll */
+  let lenis = null;
+  if (window.Lenis && !reduced) {
+    lenis = new Lenis({ duration: 1.18, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(t => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (!t) return; e.preventDefault();
+      lenis ? lenis.scrollTo(t, { offset: -80 }) : t.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  /* nav pill surfaces on scroll */
+  const nav = document.getElementById('nav');
+  const navToggle = () => nav.classList.toggle('on', (lenis ? lenis.scroll : scrollY) > 24);
+  navToggle();
+  window.addEventListener('scroll', navToggle, { passive: true });
+  if (lenis) lenis.on('scroll', navToggle);
+
+  if (!reduced) {
+    /* hero entrance: masked line rise + staged reveals */
+    gsap.timeline({ defaults: { ease: 'power4.out' } })
+      .from('.hero h1 .row span', { yPercent: 110, duration: 1.15, stagger: .12 }, .1)
+      .to('.hero .tag.rv', { opacity: 1, y: 0, duration: .7 }, .35)
+      .to('.hero .sub.rv', { opacity: 1, y: 0, duration: .8 }, .55)
+      .to('.hero .cta.rv', { opacity: 1, y: 0, duration: .8 }, .7)
+      .to('.hero .micro.rv', { opacity: 1, y: 0, duration: .7 }, .8)
+      .to('.window.rv', { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out' }, .85);
+
+    /* product window: subtle scroll tilt-away */
+    gsap.fromTo('#window', { rotateX: 0, scale: 1 }, {
+      rotateX: 6, scale: .97, transformPerspective: 900, transformOrigin: '50% 0%', ease: 'none',
+      scrollTrigger: { trigger: '#window', start: 'top 30%', end: 'bottom top', scrub: true }
+    });
+
+    /* parallax glow orbs */
+    gsap.utils.toArray('.orb').forEach(o => {
+      gsap.to(o, { y: parseFloat(o.dataset.depth || 30) * 6, ease: 'none',
+        scrollTrigger: { trigger: o.closest('section,header'), start: 'top bottom', end: 'bottom top', scrub: true } });
+    });
+
+    /* generic reveals */
+    gsap.utils.toArray('section .rv, .strip .rv').forEach(el => {
+      gsap.to(el, { opacity: 1, y: 0, duration: .9, ease: 'power3.out',
+        scrollTrigger: { trigger: el, start: 'top 87%', once: true } });
+    });
+
+    /* bars grow when seen */
+    ScrollTrigger.create({ trigger: '.bars', start: 'top 85%', once: true, onEnter: () =>
+      gsap.from('.bars i', { scaleY: 0, duration: .9, ease: 'power3.out', stagger: .07 }) });
+
+    /* sync pulse: dot travels between nodes forever */
+    gsap.to('#pulsedot', { left: '92%', duration: 2.6, ease: 'power1.inOut', repeat: -1, yoyo: true });
+
+    /* cursor-tracked glow on bento cells */
+    document.querySelectorAll('.cell').forEach(c => {
+      c.addEventListener('pointermove', e => {
+        const r = c.getBoundingClientRect();
+        c.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+        c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+      });
+    });
+  } else {
+    document.querySelectorAll('.rv').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+  }
+</script>
+</body>
+</html>
