@@ -185,12 +185,13 @@
       linear-gradient(180deg, #000 0%, #0a0a0a 100%);
   }
   /* starfield sits above the base gradient, below particles (z1 < canvas z2 < text z3) */
-  .starfield { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .starfield { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
   .star {
     position: absolute;
-    width: 1px; height: 1px;
+    width: var(--sz, 1.5px); height: var(--sz, 1.5px);
     background: #fff;
     border-radius: 50%;
+    box-shadow: var(--glow, none);
     opacity: var(--o, 0.5);
     animation: twinkle var(--d, 3s) ease-in-out var(--dl, 0s) infinite alternate;
   }
@@ -198,9 +199,28 @@
     from { opacity: var(--o, 0.5); }
     to { opacity: calc(var(--o, 0.5) * 0.2); }
   }
+  /* shooting star: thin streak, fades in/out as it travels top-right → bottom-left */
+  .shooting-star {
+    position: absolute;
+    width: 80px; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95));
+    border-radius: 2px;
+    transform: rotate(35deg);
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+  @keyframes shoot {
+    0%   { opacity: 0; transform: translate(0, 0) rotate(35deg); }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--sx, -340px), var(--sy, 240px)) rotate(35deg); }
+  }
   .moonlight {
     position: absolute; inset: 0; z-index: 1;
-    background: radial-gradient(ellipse 600px 400px at 85% 15%, rgba(100,140,255,0.07), transparent);
+    background:
+      radial-gradient(ellipse 800px 600px at 85% 15%, rgba(100,140,255,0.18), transparent),
+      radial-gradient(ellipse 400px 300px at 75% 5%, rgba(150,180,255,0.08), transparent);
     pointer-events: none;
   }
   /* particle text canvas — full width, PREZANCE watermark renders bottom-left */
@@ -634,6 +654,7 @@
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
     .scroll-hint .line, .star { animation: none; }
+    .shooting-star { display: none; }
   }
 </style>
 </head>
@@ -1031,12 +1052,37 @@
       s.className = "star";
       s.style.left = (Math.random() * 100).toFixed(2) + "%";
       s.style.top = (Math.random() * 100).toFixed(2) + "%";
+      // size tiers: 60% @1.5px, 30% @2px, 10% @3px — larger ones glow
+      const r = Math.random();
+      const sz = r < 0.6 ? 1.5 : r < 0.9 ? 2 : 3;
+      s.style.setProperty("--sz", sz + "px");
+      if (sz >= 2) s.style.setProperty("--glow", "0 0 3px rgba(255,255,255,0.8)");
       s.style.setProperty("--o", (0.3 + Math.random() * 0.5).toFixed(2));      // opacity 0.3–0.8
       s.style.setProperty("--d", (2 + Math.random() * 3).toFixed(2) + "s");    // twinkle 2–5s
       s.style.setProperty("--dl", (Math.random() * 5).toFixed(2) + "s");       // random phase
       frag.appendChild(s);
     }
     starfield.appendChild(frag);
+
+    /* shooting stars: max one at a time, every 4–8s, top-right → bottom-left */
+    if (!reduced) {
+      let shootTimer;
+      const launchShootingStar = () => {
+        const star = document.createElement("span");
+        star.className = "shooting-star";
+        // start somewhere along the top-right region
+        star.style.left = (55 + Math.random() * 40).toFixed(1) + "%";
+        star.style.top = (-5 + Math.random() * 30).toFixed(1) + "%";
+        // travel down-left, matching the 35° streak angle
+        star.style.setProperty("--sx", "-" + (260 + Math.random() * 160).toFixed(0) + "px");
+        star.style.setProperty("--sy", (180 + Math.random() * 140).toFixed(0) + "px");
+        star.style.animation = "shoot 1.2s ease-in forwards";
+        star.addEventListener("animationend", () => star.remove());
+        starfield.appendChild(star);
+        shootTimer = setTimeout(launchShootingStar, 4000 + Math.random() * 4000);
+      };
+      shootTimer = setTimeout(launchShootingStar, 2000 + Math.random() * 3000);
+    }
   }
 
   /* ───── Section fade-ups + inner reveals + process slide-ins ───── */
@@ -1148,7 +1194,7 @@
       positions[i * 3 + 1] = scatter[i * 2 + 1];
       positions[i * 3 + 2] = 0;
       phase[i] = Math.random() * Math.PI * 2;
-      const b = 0.55 + Math.random() * 0.45;
+      const b = 0x88 / 255; // grey #888888 watermark
       colors[i * 3] = b; colors[i * 3 + 1] = b; colors[i * 3 + 2] = b;
     }
     assignTargets();
@@ -1161,7 +1207,7 @@
       sizeAttenuation: false,
       vertexColors: true,
       transparent: true,
-      opacity: 0.15, // dim watermark — headline (z3) reads on top
+      opacity: 0.28, // grey watermark — headline (z3) reads on top
       depthTest: false,
       blending: THREE.AdditiveBlending
     });
