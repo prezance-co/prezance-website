@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowSync — Your team's work, finally in flow</title>
+<meta name="description" content="FlowSync is the project management platform that keeps every team aligned — boards, timelines, automations and insights in one calm workspace." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ── Verdana Health design system, adapted for SaaS ── */
+  :root{
+    --navy:#0F172A; --navy-deep:#020617; --slate:#64748B; --slate-700:#475569;
+    --sage:#059669; --sage-soft:#05966915;
+    --bg:#F8FAFC; --surface:#FFFFFF; --border:#E2E8F0; --line:#F1F5F9;
+    --success:#22C55E; --info:#0EA5E9;
+    --head:"Plus Jakarta Sans",system-ui,sans-serif; --body:"DM Sans",system-ui,sans-serif;
+    --sh-sm:0 1px 3px rgba(15,23,42,.03);
+    --sh:0 2px 6px rgba(15,23,42,.05);
+    --sh-md:0 4px 16px rgba(15,23,42,.07);
+    --sh-lg:0 8px 32px rgba(15,23,42,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--body);background:var(--bg);color:var(--navy);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  h1,h2,h3,h4{font-family:var(--head);color:var(--navy);letter-spacing:-0.01em}
+  .eyebrow{font-family:var(--body);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--sage)}
+  .muted{color:var(--slate-700)}
+  /* buttons — primary navy fill, secondary outline; sage for links/positive only */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--body);font-weight:700;font-size:14px;border-radius:8px;padding:12px 28px;height:48px;cursor:pointer;border:1px solid transparent;transition:background .15s,color .15s,box-shadow .15s,transform .15s}
+  .btn-primary{background:var(--navy);color:#fff}
+  .btn-primary:hover{background:var(--navy-deep);box-shadow:var(--sh-md);transform:translateY(-1px)}
+  .btn-secondary{background:transparent;color:var(--navy);border-color:var(--navy)}
+  .btn-secondary:hover{background:#0F172A0A}
+  .btn-sm{height:42px;padding:10px 22px}
+  /* nav */
+  header.nav{position:sticky;top:0;z-index:50;background:rgba(248,250,252,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:72px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--head);font-weight:800;font-size:20px}
+  .logo .mark{width:30px;height:30px;border-radius:8px;background:var(--navy);display:grid;place-items:center}
+  .logo .mark span{width:12px;height:12px;border-radius:3px;background:var(--sage)}
+  .nav nav{display:flex;align-items:center;gap:8px}
+  .nav nav a.link{font-size:14px;font-weight:500;color:var(--slate-700);padding:8px 14px;border-radius:8px}
+  .nav nav a.link:hover{color:var(--navy);background:var(--line)}
+  @media(max-width:820px){.nav nav a.link{display:none}}
+  /* hero */
+  .hero{padding:96px 0 64px;text-align:center}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:var(--sage-soft);color:var(--sage);border:1px solid #05966930;border-radius:9999px;padding:6px 14px;font-size:13px;font-weight:500;margin-bottom:28px}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--sage)}
+  .hero h1{font-size:clamp(38px,6vw,60px);font-weight:800;line-height:1.1;max-width:16ch;margin:0 auto 20px}
+  .hero p.sub{font-size:20px;color:var(--slate-700);max-width:54ch;margin:0 auto 36px}
+  .hero .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .trust{margin-top:22px;font-size:13px;color:var(--slate)}
+  /* app preview */
+  .preview{max-width:980px;margin:56px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--sh-lg);overflow:hidden}
+  .preview .bar{height:44px;background:var(--navy);display:flex;align-items:center;gap:8px;padding:0 16px}
+  .preview .bar i{width:11px;height:11px;border-radius:50%;background:#ffffff35;display:block}
+  .preview .bar .t{margin-left:12px;color:#fff;font-size:13px;font-weight:500;font-family:var(--head)}
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:24px;background:var(--bg)}
+  .col h5{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--slate);margin-bottom:12px;font-family:var(--body);font-weight:700}
+  .task{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;box-shadow:var(--sh-sm);text-align:left}
+  .task .tt{font-size:14px;font-weight:500;margin-bottom:8px;color:var(--navy)}
+  .chip{display:inline-block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;padding:3px 10px;border-radius:4px}
+  .chip.s{background:#22C55E15;color:#16A34A}.chip.w{background:#EAB30815;color:#CA8A04}.chip.i{background:#0EA5E915;color:#0284C7}
+  @media(max-width:720px){.board{grid-template-columns:1fr}}
+  /* logos */
+  .logos{padding:40px 0 8px;text-align:center}
+  .logos p{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--slate);margin-bottom:20px}
+  .logos .row{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;opacity:.7}
+  .logos .row span{font-family:var(--head);font-weight:700;font-size:18px;color:var(--slate-700)}
+  /* section */
+  section.band{padding:88px 0}
+  .head{max-width:640px;margin:0 auto 56px;text-align:center}
+  .head h2{font-size:clamp(28px,4vw,38px);font-weight:700;margin:14px 0}
+  .head p{font-size:18px;color:var(--slate-700)}
+  /* features */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:28px;transition:box-shadow .2s,transform .2s}
+  .card:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
+  .card .ic{width:44px;height:44px;border-radius:8px;background:var(--sage-soft);display:grid;place-items:center;margin-bottom:18px;color:var(--sage)}
+  .card h3{font-size:19px;font-weight:600;margin-bottom:8px}
+  .card p{font-size:15px;color:var(--slate-700)}
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;counter-reset:s}
+  @media(max-width:760px){.steps{grid-template-columns:1fr}}
+  .step{position:relative}
+  .step .n{width:40px;height:40px;border-radius:8px;background:var(--navy);color:#fff;display:grid;place-items:center;font-family:var(--head);font-weight:700;margin-bottom:18px}
+  .step h3{font-size:20px;font-weight:600;margin-bottom:8px}
+  .step p{color:var(--slate-700);font-size:15px}
+  /* stats */
+  .stats{background:var(--navy);border-radius:16px;padding:56px 32px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+  @media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+  .stat .v{font-family:var(--head);font-weight:800;font-size:40px;color:#fff;letter-spacing:-0.02em}
+  .stat .v em{color:#34D399;font-style:normal}
+  .stat .k{font-size:13px;color:#94A3B8;margin-top:6px}
+  /* pricing */
+  .prices{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:start}
+  @media(max-width:900px){.prices{grid-template-columns:1fr}}
+  .price{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px}
+  .price.feat{background:var(--navy);color:#fff;box-shadow:var(--sh-lg)}
+  .price.feat h3,.price.feat .amt{color:#fff}
+  .price h3{font-size:22px;font-weight:600;margin-bottom:4px}
+  .price .desc{font-size:14px;color:var(--slate-700);margin-bottom:20px}
+  .price.feat .desc{color:#94A3B8}
+  .price .amt{font-family:var(--head);font-weight:800;font-size:44px;letter-spacing:-0.02em}
+  .price .amt small{font-size:15px;font-weight:500;color:var(--slate)}
+  .price.feat .amt small{color:#94A3B8}
+  .price ul{list-style:none;margin:22px 0;display:flex;flex-direction:column;gap:12px}
+  .price li{display:flex;gap:10px;font-size:15px;align-items:flex-start}
+  .price li svg{flex:0 0 18px;margin-top:3px;color:var(--sage)}
+  .price.feat li svg{color:#34D399}
+  .price .btn{width:100%}
+  .price.feat .btn-primary{background:#fff;color:var(--navy)}
+  .badge{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:#34D39920;color:#34D399;padding:3px 10px;border-radius:4px;margin-bottom:14px}
+  /* cta */
+  .ctaband{text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:64px 32px;box-shadow:var(--sh)}
+  .ctaband h2{font-size:clamp(28px,4vw,40px);font-weight:700;margin-bottom:14px;max-width:18ch;margin-inline:auto}
+  .ctaband p{color:var(--slate-700);font-size:18px;margin-bottom:28px}
+  /* footer */
+  footer{border-top:1px solid var(--border);padding:56px 0 40px;margin-top:24px}
+  .fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:32px}
+  @media(max-width:760px){.fgrid{grid-template-columns:1fr 1fr}}
+  footer h6{font-family:var(--body);font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--slate);margin-bottom:14px}
+  footer a.fl{display:block;font-size:14px;color:var(--slate-700);padding:5px 0}
+  footer a.fl:hover{color:var(--sage)}
+  .fbot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:40px;padding-top:24px;font-size:13px;color:var(--slate);flex-wrap:wrap;gap:10px}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#"><span class="mark"><span></span></span>FlowSync</a>
+    <nav>
+      <a class="link" href="#features">Features</a>
+      <a class="link" href="#workflow">Workflow</a>
+      <a class="link" href="#pricing">Pricing</a>
+      <a class="link" href="#">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="#pricing">Start free</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="pill"><span class="dot"></span>New · Timeline view 2.0 is live</span>
+    <h1>Your team's work, finally in flow.</h1>
+    <p class="sub">FlowSync brings boards, timelines, automations and reporting into one calm workspace — so your team spends less time syncing and more time shipping.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="#pricing">Start free — no card needed</a>
+      <a class="btn btn-secondary" href="#workflow">See how it works</a>
+    </div>
+    <div class="trust">Trusted by 12,000+ teams · Free for up to 5 members</div>
+
+    <div class="preview">
+      <div class="bar"><i></i><i></i><i></i><span class="t">FlowSync — Product Launch</span></div>
+      <div class="board">
+        <div class="col">
+          <h5>To do</h5>
+          <div class="task"><div class="tt">Finalize Q3 roadmap</div><span class="chip i">Planning</span></div>
+          <div class="task"><div class="tt">Draft launch email</div><span class="chip w">Due soon</span></div>
+        </div>
+        <div class="col">
+          <h5>In progress</h5>
+          <div class="task"><div class="tt">Build onboarding flow</div><span class="chip i">Design</span></div>
+          <div class="task"><div class="tt">API rate-limit fix</div><span class="chip w">Review</span></div>
+        </div>
+        <div class="col">
+          <h5>Done</h5>
+          <div class="task"><div class="tt">Migrate billing service</div><span class="chip s">Shipped</span></div>
+          <div class="task"><div class="tt">Customer interviews</div><span class="chip s">Shipped</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="logos">
+  <div class="wrap">
+    <p>Teams at fast-moving companies run on FlowSync</p>
+    <div class="row"><span>Northwind</span><span>Lumen</span><span>Cedarworks</span><span>Halcyon</span><span>Brightline</span></div>
+  </div>
+</div>
+
+<section class="band" id="features">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow">Everything in one place</span>
+      <h2>The calm command center for your projects</h2>
+      <p>Replace the scattered docs, chats and spreadsheets with one source of truth your whole team actually enjoys using.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/></svg></div><h3>Flexible boards</h3><p>Kanban, list or table — switch views instantly. Drag tasks, set priorities and watch work move from idea to done.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h12M3 18h7"/></svg></div><h3>Timeline planning</h3><p>Map dependencies on a clean Gantt-style timeline. Shift one date and FlowSync recalculates the rest automatically.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div><h3>No-code automations</h3><p>“When a task is done, notify the channel.” Build rules in plain language and let routine busywork run itself.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><h3>Live insights</h3><p>Real-time dashboards show velocity, workload and risk — so you spot blockers before they become deadlines.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 20c0-2 1.5-3.5 4-3.5"/></svg></div><h3>Team workload</h3><p>See who's overloaded at a glance and rebalance with a drag. Healthy teams ship more, and FlowSync keeps it visible.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.5 8.5 0 1 1-4-7.2L21 3"/><path d="M9 12l2 2 4-4"/></svg></div><h3>100+ integrations</h3><p>Connect Slack, GitHub, Figma and Google Drive. FlowSync fits the tools you already use instead of replacing them.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="workflow" style="background:#fff;border-block:1px solid var(--border)">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow">How it works</span>
+      <h2>Up and running in an afternoon</h2>
+      <p>No lengthy setup, no consultant required. Most teams import their first project in under ten minutes.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Bring your work in</h3><p>Import from a spreadsheet, Trello or Asana in one click — or start fresh with a ready-made template for your team.</p></div>
+      <div class="step"><div class="n">2</div><h3>Shape your workflow</h3><p>Add the stages, fields and automations that match how your team actually operates. No two FlowSync boards look alike.</p></div>
+      <div class="step"><div class="n">3</div><h3>Ship in flow</h3><p>Assign, track and celebrate progress together. Dashboards keep everyone aligned without another status meeting.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><div class="v">12k<em>+</em></div><div class="k">Active teams</div></div>
+      <div class="stat"><div class="v">3.4<em>M</em></div><div class="k">Tasks shipped weekly</div></div>
+      <div class="stat"><div class="v">40<em>%</em></div><div class="k">Fewer status meetings</div></div>
+      <div class="stat"><div class="v">99.9<em>%</em></div><div class="k">Uptime SLA</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="pricing" style="background:#fff;border-block:1px solid var(--border)">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow">Pricing</span>
+      <h2>Simple plans that scale with you</h2>
+      <p>Start free forever. Upgrade only when your team grows. No surprises, cancel anytime.</p>
+    </div>
+    <div class="prices">
+      <div class="price">
+        <h3>Starter</h3>
+        <div class="desc">For small teams getting organized.</div>
+        <div class="amt">$0<small>/mo</small></div>
+        <ul>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>Up to 5 members</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>Unlimited tasks &amp; boards</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>3 active projects</li>
+        </ul>
+        <a class="btn btn-secondary" href="#">Get started</a>
+      </div>
+      <div class="price feat">
+        <span class="badge">Most popular</span>
+        <h3>Team</h3>
+        <div class="desc">For growing teams that ship fast.</div>
+        <div class="amt">$9<small>/user / mo</small></div>
+        <ul>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>Everything in Starter</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>Timeline &amp; automations</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>Unlimited projects</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>Insights dashboards</li>
+        </ul>
+        <a class="btn btn-primary" href="#">Start 14-day trial</a>
+      </div>
+      <div class="price">
+        <h3>Enterprise</h3>
+        <div class="desc">For organizations that need control.</div>
+        <div class="amt">Custom</div>
+        <ul>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>SSO &amp; SCIM provisioning</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>Advanced permissions</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4L19 7"/></svg>Dedicated success manager</li>
+        </ul>
+        <a class="btn btn-secondary" href="#">Talk to sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="ctaband">
+      <span class="eyebrow">Get started</span>
+      <h2 style="margin-top:14px">Bring your team into flow today</h2>
+      <p>Join 12,000+ teams who replaced the chaos with one calm workspace.</p>
+      <div class="cta" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-primary" href="#">Start free</a>
+        <a class="btn btn-secondary" href="#">Book a demo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="logo" href="#" style="margin-bottom:14px"><span class="mark"><span></span></span>FlowSync</a>
+        <p class="muted" style="font-size:14px;max-width:30ch">The calm project management platform for teams that ship.</p>
+      </div>
+      <div><h6>Product</h6><a class="fl" href="#features">Features</a><a class="fl" href="#workflow">Workflow</a><a class="fl" href="#pricing">Pricing</a><a class="fl" href="#">Integrations</a></div>
+      <div><h6>Company</h6><a class="fl" href="#">About</a><a class="fl" href="#">Customers</a><a class="fl" href="#">Careers</a><a class="fl" href="#">Blog</a></div>
+      <div><h6>Resources</h6><a class="fl" href="#">Help center</a><a class="fl" href="#">API docs</a><a class="fl" href="#">Status</a><a class="fl" href="#">Security</a></div>
+    </div>
+    <div class="fbot"><span>© 2026 FlowSync, Inc.</span><span>Privacy · Terms · hello@flowsync.app</span></div>
+  </div>
+</footer>
+
+</body>
+</html>

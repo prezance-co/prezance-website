@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pocketo — Money that moves with you</title>
+<meta name="description" content="Pocketo is the personal finance app that tracks spending, automates saving and grows your money — all in one dark, beautiful place." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+<style>
+  /* ── Green Deck design system — dark-first, electric green accent ── */
+  :root{
+    --green:#1DB954; --green-h:#1ED760;
+    --bg:#121212; --surface:#181818; --surface-2:#282828; --surface-3:#333;
+    --white:#fff; --txt2:#A7A7A7; --neutral:#B3B3B3; --border:#282828;
+    --font:"DM Sans",system-ui,sans-serif; --mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font);background:var(--bg);color:var(--white);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+  h1,h2,h3{letter-spacing:-0.02em;font-weight:800}
+  .label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green)}
+  /* buttons — pill, green primary */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 32px;border-radius:9999px;font-weight:700;font-size:14px;letter-spacing:.03em;cursor:pointer;border:1px solid transparent;transition:transform .2s,background .2s,color .2s}
+  .btn-primary{background:var(--green);color:#fff;text-transform:uppercase}
+  .btn-primary:hover{background:var(--green-h);transform:scale(1.04)}
+  .btn-secondary{background:transparent;color:var(--white);border-color:#727272}
+  .btn-secondary:hover{transform:scale(1.04)}
+  .btn-sm{height:40px;padding:0 22px}
+  /* nav */
+  header.nav{position:sticky;top:0;z-index:50;background:rgba(18,18,18,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:72px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:21px}
+  .logo .m{width:30px;height:30px;border-radius:9999px;background:var(--green);display:grid;place-items:center;color:#062b13;font-weight:800}
+  .nav nav{display:flex;align-items:center;gap:6px}
+  .nav nav a.l{font-size:14px;font-weight:700;color:var(--neutral);padding:8px 14px;border-radius:9999px}
+  .nav nav a.l:hover{color:#fff}
+  @media(max-width:860px){.nav nav a.l{display:none}}
+  /* hero */
+  .hero{padding:80px 0 64px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:-200px;right:-120px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,#1DB95425,transparent 65%);pointer-events:none}
+  .hero .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;position:relative}
+  @media(max-width:880px){.hero .grid{grid-template-columns:1fr;text-align:center}}
+  .chip-new{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:9999px;padding:6px 14px;font-size:13px;color:var(--neutral);margin-bottom:26px}
+  .chip-new b{color:var(--green)}
+  .hero h1{font-size:clamp(40px,6.4vw,64px);line-height:1.05;margin-bottom:20px}
+  .hero h1 em{font-style:normal;color:var(--green)}
+  .hero p.sub{font-size:18px;color:var(--txt2);max-width:46ch;margin-bottom:34px}
+  @media(max-width:880px){.hero p.sub{margin-inline:auto}}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  @media(max-width:880px){.hero .cta{justify-content:center}}
+  .rating{margin-top:22px;font-size:13px;color:var(--txt2);display:flex;align-items:center;gap:8px}
+  @media(max-width:880px){.rating{justify-content:center}}
+  .stars{color:var(--green);letter-spacing:2px}
+  /* phone mockup */
+  .phone{justify-self:center;width:300px;height:600px;background:#000;border-radius:44px;border:1px solid var(--surface-3);padding:12px;box-shadow:0 -8px 60px rgba(29,185,84,.12),0 30px 70px rgba(0,0,0,.6)}
+  .screen{width:100%;height:100%;background:var(--bg);border-radius:34px;overflow:hidden;display:flex;flex-direction:column}
+  .scr-top{padding:22px 20px 12px}
+  .scr-top .hi{font-size:13px;color:var(--txt2)}
+  .scr-top .bal{font-size:34px;font-weight:800;letter-spacing:-0.02em;margin-top:2px}
+  .scr-top .delta{font-size:12px;color:var(--green);font-weight:700;margin-top:4px}
+  .scr-card{margin:8px 20px;background:var(--surface);border-radius:12px;padding:16px}
+  .scr-card .t{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);margin-bottom:12px}
+  .bars{display:flex;align-items:flex-end;gap:7px;height:64px}
+  .bars i{flex:1;background:var(--surface-2);border-radius:3px}
+  .bars i.on{background:var(--green)}
+  .tx{display:flex;align-items:center;gap:12px;padding:10px 20px}
+  .tx .ic{width:36px;height:36px;border-radius:9999px;background:var(--surface-2);display:grid;place-items:center;font-size:15px}
+  .tx .nm{font-size:13px;font-weight:700;flex:1}
+  .tx .nm small{display:block;font-weight:400;color:var(--txt2);font-size:11px}
+  .tx .amt{font-size:13px;font-weight:700}
+  .tx .amt.pos{color:var(--green)}
+  .scr-nav{margin-top:auto;display:flex;justify-content:space-around;padding:14px 0;border-top:1px solid var(--border);color:var(--txt2)}
+  .scr-nav i{width:22px;height:22px;border-radius:6px;background:var(--surface-2)}
+  .scr-nav i.act{background:var(--green)}
+  /* logos */
+  .press{padding:24px 0 0;text-align:center}
+  .press p{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);margin-bottom:18px}
+  .press .row{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;opacity:.6}
+  .press .row span{font-weight:800;font-size:17px;color:var(--neutral)}
+  /* sections */
+  section.band{padding:88px 0}
+  .head{max-width:640px;margin:0 auto 52px;text-align:center}
+  .head h2{font-size:clamp(28px,4vw,40px);margin:14px 0}
+  .head p{font-size:17px;color:var(--txt2)}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  @media(max-width:880px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--surface);border-radius:8px;padding:28px;transition:background .2s,transform .2s}
+  .card:hover{background:var(--surface-2);transform:translateY(-3px)}
+  .card .ic{width:46px;height:46px;border-radius:9999px;background:#1DB95420;display:grid;place-items:center;color:var(--green);margin-bottom:18px}
+  .card h3{font-size:19px;margin-bottom:8px}
+  .card p{font-size:14px;color:var(--txt2)}
+  /* feature split */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;background:var(--surface);border-radius:12px;padding:48px}
+  @media(max-width:880px){.split{grid-template-columns:1fr;padding:32px}}
+  .split h2{font-size:clamp(26px,3.6vw,34px);margin:14px 0}
+  .split p{color:var(--txt2);font-size:16px;margin-bottom:22px}
+  .split ul{list-style:none;display:flex;flex-direction:column;gap:14px}
+  .split li{display:flex;gap:12px;align-items:flex-start;font-size:15px}
+  .split li .dot{flex:0 0 22px;height:22px;border-radius:9999px;background:#1DB95420;color:var(--green);display:grid;place-items:center;font-size:13px;margin-top:1px}
+  .ring{aspect-ratio:1;background:var(--bg);border-radius:12px;display:grid;place-items:center}
+  .ring .donut{width:200px;height:200px;border-radius:50%;background:conic-gradient(var(--green) 0 62%,#282828 62% 100%);display:grid;place-items:center}
+  .ring .donut .hole{width:140px;height:140px;border-radius:50%;background:var(--bg);display:grid;place-items:center;text-align:center}
+  .ring .donut .hole .pct{font-size:34px;font-weight:800}
+  .ring .donut .hole .cap{font-size:11px;color:var(--txt2);letter-spacing:.08em;text-transform:uppercase}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+  @media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+  .stat .v{font-size:42px;font-weight:800;letter-spacing:-0.02em}
+  .stat .v em{font-style:normal;color:var(--green)}
+  .stat .k{font-size:13px;color:var(--txt2);margin-top:6px}
+  /* pricing */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:760px;margin:0 auto}
+  @media(max-width:680px){.plans{grid-template-columns:1fr}}
+  .plan{background:var(--surface);border-radius:12px;padding:34px}
+  .plan.pro{background:linear-gradient(160deg,#16361f,#181818);outline:1px solid #1DB95450}
+  .plan h3{font-size:22px;margin-bottom:4px}
+  .plan .amt{font-size:42px;font-weight:800;letter-spacing:-0.02em;margin:8px 0}
+  .plan .amt small{font-size:14px;color:var(--txt2);font-weight:500}
+  .plan ul{list-style:none;margin:20px 0;display:flex;flex-direction:column;gap:12px}
+  .plan li{display:flex;gap:10px;font-size:14px;color:var(--neutral)}
+  .plan li::before{content:"✓";color:var(--green);font-weight:800}
+  .plan .btn{width:100%}
+  /* cta */
+  .ctaband{text-align:center;background:linear-gradient(160deg,#16361f,#121212);border-radius:16px;padding:72px 32px}
+  .ctaband h2{font-size:clamp(30px,4.4vw,46px);margin-bottom:16px}
+  .ctaband p{color:var(--txt2);font-size:18px;margin-bottom:30px}
+  .store{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .store a{display:inline-flex;align-items:center;gap:10px;background:#fff;color:#000;border-radius:9999px;padding:13px 24px;font-weight:700;font-size:14px}
+  /* footer */
+  footer{border-top:1px solid var(--border);padding:56px 0 40px;margin-top:24px}
+  .fgrid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:32px}
+  @media(max-width:760px){.fgrid{grid-template-columns:1fr 1fr}}
+  footer h6{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);margin-bottom:14px}
+  footer a.fl{display:block;font-size:14px;color:var(--neutral);padding:5px 0}
+  footer a.fl:hover{color:#fff}
+  .fbot{border-top:1px solid var(--border);margin-top:40px;padding-top:24px;display:flex;justify-content:space-between;font-size:13px;color:var(--txt2);flex-wrap:wrap;gap:10px}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#"><span class="m">P</span>Pocketo</a>
+    <nav>
+      <a class="l" href="#features">Features</a>
+      <a class="l" href="#save">Saving</a>
+      <a class="l" href="#pricing">Pricing</a>
+      <a class="btn btn-primary btn-sm" href="#get">Get the app</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <span class="chip-new">🎉 <b>Pocketo 3.0</b> — instant insights are here</span>
+        <h1>Money that <em>moves</em> with you.</h1>
+        <p class="sub">Track every dollar, automate your saving and watch your money grow — all in one beautifully dark app that actually feels good to open.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="#get">Download free</a>
+          <a class="btn btn-secondary" href="#features">See features</a>
+        </div>
+        <div class="rating"><span class="stars">★★★★★</span> 4.9 · 84,000+ ratings on the App Store</div>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="scr-top">
+            <div class="hi">Good evening, Sam</div>
+            <div class="bal">$8,420.65</div>
+            <div class="delta">▲ $312 this month</div>
+          </div>
+          <div class="scr-card">
+            <div class="t">Spending this week</div>
+            <div class="bars"><i style="height:40%"></i><i style="height:65%" class="on"></i><i style="height:30%"></i><i style="height:80%" class="on"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:70%" class="on"></i></div>
+          </div>
+          <div class="tx"><div class="ic">☕</div><div class="nm">Blue Bottle<small>Coffee · Today</small></div><div class="amt">−$5.40</div></div>
+          <div class="tx"><div class="ic">💸</div><div class="nm">Salary<small>Income · Mar 1</small></div><div class="amt pos">+$3,200</div></div>
+          <div class="tx"><div class="ic">🏠</div><div class="nm">Rent<small>Housing · Mar 1</small></div><div class="amt">−$1,450</div></div>
+          <div class="scr-nav"><i class="act"></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="press">
+  <div class="wrap">
+    <p>As featured in</p>
+    <div class="row"><span>TechCrunch</span><span>WIRED</span><span>The Verge</span><span>Forbes</span></div>
+  </div>
+</div>
+
+<section class="band" id="features">
+  <div class="wrap">
+    <div class="head">
+      <span class="label">Why Pocketo</span>
+      <h2>Everything your money needs, nothing it doesn't</h2>
+      <p>One app to see it all, automate the boring parts and stay ahead — without the spreadsheet energy.</p>
+    </div>
+    <div class="grid3">
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 2 5-7"/></svg></div><h3>Live spending</h3><p>Every transaction lands in seconds, auto-categorized. Always know exactly where your money went.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3>Auto-save rules</h3><p>“Round up every coffee” or “stash 10% of payday.” Set it once and watch your savings climb on autopilot.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div><h3>Smart budgets</h3><p>Budgets that adapt to your real habits and nudge you before you overspend — never after.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg></div><h3>Bank-grade security</h3><p>256-bit encryption, Face ID and read-only bank connections. Your data is yours — we never sell it.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M5 9l7-7 7 7"/></svg></div><h3>Goals that grow</h3><p>Set a goal for a trip, a cushion or a big buy — Pocketo tracks the progress and celebrates the wins.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 12h8M12 8v8"/></svg></div><h3>All accounts, one view</h3><p>Connect every bank, card and wallet. See your full financial picture without juggling ten apps.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="save" style="padding-top:0">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <span class="label">Effortless saving</span>
+        <h2>Save without thinking about it</h2>
+        <p>Pocketo quietly moves small amounts into savings based on rules you set — so you hit your goals without feeling the pinch.</p>
+        <ul>
+          <li><span class="dot">✓</span>Round-ups on every purchase</li>
+          <li><span class="dot">✓</span>Automatic payday transfers</li>
+          <li><span class="dot">✓</span>Safe-to-save detection so you never overdraw</li>
+          <li><span class="dot">✓</span>Withdraw anytime, zero fees</li>
+        </ul>
+      </div>
+      <div class="ring">
+        <div class="donut"><div class="hole"><div><div class="pct">62%</div><div class="cap">Goal reached</div></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" style="padding-top:0">
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><div class="v">2<em>M+</em></div><div class="k">Happy savers</div></div>
+      <div class="stat"><div class="v">$<em>1.4B</em></div><div class="k">Saved with Pocketo</div></div>
+      <div class="stat"><div class="v">4.9<em>★</em></div><div class="k">App Store rating</div></div>
+      <div class="stat"><div class="v"><em>0</em></div><div class="k">Hidden fees</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="pricing" style="background:var(--surface)">
+  <div class="wrap">
+    <div class="head">
+      <span class="label">Pricing</span>
+      <h2>Start free. Upgrade when you're ready.</h2>
+      <p>No card to start. No fees to leave. Just clarity over your money.</p>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <h3>Free</h3>
+        <div class="amt">$0<small> forever</small></div>
+        <ul><li>All accounts in one view</li><li>Live spending &amp; budgets</li><li>2 savings goals</li></ul>
+        <a class="btn btn-secondary" href="#get">Download free</a>
+      </div>
+      <div class="plan pro">
+        <h3>Pocketo Plus</h3>
+        <div class="amt">$4.99<small>/mo</small></div>
+        <ul><li>Everything in Free</li><li>Unlimited goals &amp; auto-save rules</li><li>Bill detection &amp; forecasts</li><li>Priority support</li></ul>
+        <a class="btn btn-primary" href="#get">Start 30-day trial</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="get">
+  <div class="wrap">
+    <div class="ctaband">
+      <span class="label">Get started</span>
+      <h2 style="margin-top:14px">Your money, finally on your side</h2>
+      <p>Join 2 million people who took control with Pocketo. It's free to start.</p>
+      <div class="store">
+        <a href="#"> App Store</a>
+        <a href="#">▶ Google Play</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="logo" href="#" style="margin-bottom:14px"><span class="m">P</span>Pocketo</a>
+        <p style="font-size:14px;color:var(--txt2);max-width:30ch">The personal finance app that helps your money move with you.</p>
+      </div>
+      <div><h6>Product</h6><a class="fl" href="#features">Features</a><a class="fl" href="#save">Saving</a><a class="fl" href="#pricing">Pricing</a><a class="fl" href="#">Security</a></div>
+      <div><h6>Company</h6><a class="fl" href="#">About</a><a class="fl" href="#">Careers</a><a class="fl" href="#">Press</a><a class="fl" href="#">Blog</a></div>
+      <div><h6>Support</h6><a class="fl" href="#">Help center</a><a class="fl" href="#">Contact</a><a class="fl" href="#">Privacy</a><a class="fl" href="#">Terms</a></div>
+    </div>
+    <div class="fbot"><span>© 2026 Pocketo Financial</span><span>hello@pocketo.app</span></div>
+  </div>
+</footer>
+
+</body>
+</html>
