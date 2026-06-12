@@ -22,10 +22,11 @@ export function initCarousel() {
   const cardHTML = (t) => {
     const label = esc(t.label), cat = esc(CAT_LABEL[t.category] || t.category);
     const lbl = `<div class="card__label"><div class="name">${label}</div><div class="cat">${cat}</div></div>`;
+    const route = esc(routeFor(t));
     return `<div class="carousel__cell">
       <div class="card template-card" style="--img: ${faceImg(t)}">
-        <div class="card__face card__face--front">
-          <button class="card__explore" type="button" data-route="${esc(routeFor(t))}">Explore →</button>
+        <div class="card__face card__face--front" data-route="${route}" role="link" aria-label="Explore ${label}">
+          <button class="card__explore" type="button" data-route="${route}">Explore →</button>
           ${lbl}
         </div>
         <div class="card__face card__face--back">${lbl}</div>
@@ -81,6 +82,24 @@ export function initCarousel() {
       .fromTo(cardEls, { rotationZ: 10 }, { rotationZ: -10, ease: 'none' }, 0);
   }
 
+  // Hovering a card freezes the scroll-scrub rotation and pops the card flat to
+  // the front, so the orbiting 3D card becomes a steady, easy click target.
+  function bindHover() {
+    drag.querySelectorAll('.card').forEach((card) => {
+      card.addEventListener('mouseenter', () => {
+        if (tl && tl.scrollTrigger) tl.scrollTrigger.disable(false);
+        card.classList.add('is-focused');
+        if (hasGSAP) gsap.to(card, { rotationZ: 0, scale: 1.05, duration: 0.3, ease: 'power2.out', overwrite: true });
+      });
+      card.addEventListener('mouseleave', () => {
+        card.classList.remove('is-focused');
+        const resume = () => { if (tl && tl.scrollTrigger) tl.scrollTrigger.enable(); };
+        if (hasGSAP) gsap.to(card, { scale: 1, duration: 0.3, ease: 'power2.out', overwrite: true, onComplete: resume });
+        else resume();
+      });
+    });
+  }
+
   function render(filter, animate) {
     const subset = MANIFEST.filter((t) => filter === 'all' || t.category === filter);
     const doSwap = () => {
@@ -88,6 +107,7 @@ export function initCarousel() {
       cells = Array.from(drag.querySelectorAll('.carousel__cell'));
       layout();
       buildTimeline();
+      bindHover();
       if (hasGSAP) ScrollTrigger.refresh();
       if (animate && hasGSAP && !reduced) {
         gsap.fromTo(cells, { autoAlpha: 0, scale: 0.85 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'power2.out', stagger: 0.03 });

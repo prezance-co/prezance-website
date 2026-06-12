@@ -317,7 +317,7 @@
   .scene {
     perspective: 900px;
     position: relative;
-    height: 100vh;
+    height: 80vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -327,18 +327,20 @@
     -webkit-user-select: none;
   }
   .scene.grabbing { cursor: grabbing; }
-  .scene__title {
-    position: relative;
-    z-index: 10;
-    margin: 0;
-    font-family: var(--mono);
-    font-weight: 400;
-    font-size: clamp(16px, 2.6vw, 28px);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--white);
+  .carousel-head {
+    text-align: center;
+    padding-top: 96px;
+    margin-bottom: 0;
   }
-  .scene__title span { display: inline-block; }
+  .carousel-head .eyebrow { display: block; margin-bottom: 14px; }
+  .carousel-head h2 {
+    font-size: clamp(30px, 4.4vw, 52px);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    color: var(--white);
+    margin: 0;
+  }
   .scene__hint {
     position: absolute;
     bottom: 10vh; left: 50%; transform: translateX(-50%);
@@ -348,11 +350,10 @@
 
   /* Category filter pills */
   .template-filters {
-    position: absolute;
-    top: 88px; left: 0; right: 0;
+    position: relative;
     z-index: 20;
     display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
-    padding: 0 var(--gutter);
+    padding: 26px var(--gutter) 0;
   }
   .filter-pill {
     font-family: var(--mono);
@@ -429,7 +430,7 @@
     position: absolute;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%) scale(0.9);
-    z-index: 3;
+    z-index: 30;
     font-family: var(--sans); font-size: 14px; font-weight: 500;
     background: var(--white); color: var(--black);
     border: none; border-radius: 100px;
@@ -437,12 +438,17 @@
     opacity: 0; pointer-events: none;
     transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
     white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
   }
   .card:hover .card__explore { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+  /* Whole front face is a click target so the orbiting card is easy to hit */
+  .card__face--front { cursor: pointer; }
+  /* Hovered card is lifted above its neighbours for a clean, stable click */
+  .card.is-focused { z-index: 60; }
   @media (max-width: 560px) {
     .carousel { width: 220px; height: 300px; margin: -150px 0 0 -110px; transform: translateZ(-260px) rotateY(0deg); }
     .carousel__cell { width: 200px; height: 260px; }
-    .template-filters { top: 76px; gap: 8px; }
+    .template-filters { gap: 8px; }
     .filter-pill { padding: 5px 12px; font-size: 10px; }
   }
 
@@ -775,6 +781,10 @@
 
 <!-- ═══════════  TEMPLATE GALLERY — 3D RING CAROUSEL + CATEGORY FILTERS  ═══════════ -->
 <section class="section carousel-band" id="templates">
+  <div class="wrap carousel-head">
+    <span class="eyebrow">Templates</span>
+    <h2>Choose your design</h2>
+  </div>
   <div class="template-filters" id="template-filters" role="tablist" aria-label="Filter templates by category">
     <button class="filter-pill active" type="button" data-filter="all" aria-selected="true">All</button>
     <button class="filter-pill" type="button" data-filter="medical" aria-selected="false">Medical</button>
@@ -785,7 +795,6 @@
   </div>
   <div class="scene-wrapper">
     <div class="scene" data-radius="650">
-      <h2 class="scene__title"><span>Choose your design</span></h2>
       <div class="carousel">
         <div class="carousel__drag" id="carousel-drag"><!-- cards injected by JS from the manifest --></div>
       </div>
