@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prezance — Your presence, perfected.</title>
+<meta name="description" content="AI-powered websites, apps and digital tools for professionals. Built in 72 hours." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23000'/%3E%3Ctext x='16' y='22' font-family='Inter,system-ui,sans-serif' font-size='18' font-weight='600' fill='%23fff' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<!-- Three.js (global build, powers the hero particle text) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- GSAP + plugins — 3.13.0: SplitText/ScrollToPlugin are in the free npm package from 3.13 -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollToPlugin.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+
+<!-- Lenis smooth scroll -->
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+
+<style>
+  /* ─────────────────────────  Tokens  ───────────────────────── */
+  :root {
+    --black: #000000;
+    --white: #ffffff;
+    --mute: #888888;
+    --label: #666666;
+    --border: #333333;
+    --surface: #0a0a0a;
+    --surface-2: #111111;
+    --sans: "Inter", system-ui, -apple-system, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --gutter: 24px;
+    --max: 1200px;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --border-radius: 8px; /* Codrops card radius token */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--sans);
+    font-feature-settings: "ss01", "cv01", "cv11";
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--white); color: var(--black); }
+  a { color: inherit; text-decoration: none; }
+
+  /* ───── Film grain overlay (CSS only) ───── */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 99999;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 128px 128px;
+  }
+
+  /* ───── Cursor spotlight ───── */
+  #spotlight {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  #spotlight.on { opacity: 1; }
+
+  /* ───── Cursor text swap label ───── */
+  #cursor-label {
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 10000;
+    pointer-events: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--black);
+    background: var(--white);
+    padding: 6px 12px;
+    border-radius: 100px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate(8px, 8px) scale(0.8);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    will-change: left, top;
+  }
+  #cursor-label.on { opacity: 1; transform: translate(8px, 8px) scale(1); }
+
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+
+  /* ─────────────────────────  Buttons  ───────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 100px;
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    position: relative;
+    z-index: 1;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+    will-change: transform;
+  }
+  .btn-primary { background: var(--white); color: var(--black); }
+  .btn-primary:hover { background: #e8e8e8; }
+  .btn-secondary { background: transparent; color: var(--white); border-color: var(--border); }
+  .btn-secondary:hover { border-color: var(--white); background: rgba(255,255,255,0.04); }
+
+  /* ─────────────────────────  Nav  ───────────────────────── */
+  nav#nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    transition: background 0.3s var(--ease), border-color 0.3s var(--ease), backdrop-filter 0.3s var(--ease);
+    border-bottom: 1px solid transparent;
+  }
+  nav#nav.scrolled {
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav#nav .wrap { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .logo { font-size: 18px; font-weight: 600; letter-spacing: -0.04em; }
+  .nav-links { display: flex; align-items: center; gap: 4px; }
+  .nav-links a {
+    font-size: 14px; color: var(--mute); padding: 8px 12px; border-radius: 100px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .nav-links a:hover { color: var(--white); background: rgba(255,255,255,0.05); }
+  .nav-cta {
+    height: 36px; padding: 0 16px; border-radius: 100px; font-size: 14px; font-weight: 500;
+    background: var(--white); color: var(--black); display: inline-flex; align-items: center;
+    position: relative; z-index: 1; will-change: transform;
+  }
+  @media (max-width: 720px) { .nav-links a:not(.nav-cta) { display: none; } }
+
+  /* ─────────────────────────  Hero  ───────────────────────── */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: flex-start; /* content sits in the upper third; PREZANCE watermark stays at the bottom */
+    overflow: hidden;
+  }
+  .hero-fallback {
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(60% 50% at 30% 20%, #101010 0%, transparent 70%),
+      radial-gradient(50% 60% at 80% 70%, #141414 0%, transparent 70%),
+      linear-gradient(180deg, #000 0%, #0a0a0a 100%);
+  }
+  /* starfield sits above the base gradient, below particles (z1 < canvas z2 < text z3) */
+  .starfield { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+  .star {
+    position: absolute;
+    width: var(--sz, 1.5px); height: var(--sz, 1.5px);
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: var(--glow, none);
+    opacity: var(--o, 0.5);
+    animation: twinkle var(--d, 3s) ease-in-out var(--dl, 0s) infinite alternate;
+  }
+  @keyframes twinkle {
+    from { opacity: var(--o, 0.5); }
+    to { opacity: calc(var(--o, 0.5) * 0.2); }
+  }
+  .moonlight {
+    position: absolute; inset: 0; z-index: 1;
+    background:
+      radial-gradient(ellipse 800px 600px at 85% 15%, rgba(100,140,255,0.18), transparent),
+      radial-gradient(ellipse 400px 300px at 75% 5%, rgba(150,180,255,0.08), transparent);
+    pointer-events: none;
+  }
+  /* particle text canvas — full width, PREZANCE watermark renders bottom-left */
+  #particle-canvas {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 2;
+  }
+  /* vignette below the starfield so stars stay visible */
+  .hero::after {
+    content: "";
+    position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+  }
+  .hero .wrap { position: relative; z-index: 3; width: 100%; padding-top: 120px; padding-bottom: 80px; }
+  .hero h1 {
+    font-size: clamp(44px, 8.5vw, 104px);
+    font-weight: 600;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    max-width: 14ch;
+    margin-bottom: 24px;
+  }
+  .hero h1 .hword { display: inline-block; will-change: transform, opacity; }
+  .hero p.sub {
+    font-size: clamp(17px, 2.4vw, 22px);
+    color: rgba(255,255,255,0.72);
+    max-width: 42ch;
+    line-height: 1.45;
+    margin-bottom: 40px;
+  }
+  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ─────────────────────────  Section frame  ───────────────────────── */
+  section { position: relative; }
+  .band { padding: clamp(80px, 12vw, 160px) 0; }
+  .section-head { margin-bottom: 56px; max-width: 720px; }
+  .section-head .eyebrow { display: block; margin-bottom: 16px; }
+  .section-head h2 {
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    color: var(--white);
+  }
+  .section-head p { margin-top: 18px; font-size: 18px; color: var(--mute); max-width: 52ch; }
+  h2 .word { display: inline-block; will-change: transform, opacity; }
+
+  /* ─────────────────────────  Bento grid (asymmetric, no numbers)  ───────────────────────── */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-auto-rows: minmax(190px, auto);
+    gap: 16px;
+  }
+  .cell {
+    position: relative;
+    border: 1px solid #222;
+    border-radius: 12px;
+    background: #111;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    transition: border-color 0.3s var(--ease), transform 0.3s var(--ease);
+  }
+  .cell:hover { border-color: #444; transform: scale(1.02); }
+  .cell .tag { font-family: var(--mono); font-size: 12px; color: var(--label); letter-spacing: 0.08em; text-transform: uppercase; }
+  .cell .ttl {
+    font-weight: 600; letter-spacing: -0.03em; line-height: 1.0;
+    margin: 0; font-size: 28px; color: var(--white);
+  }
+  .cell .desc { color: var(--mute); font-size: 15px; line-height: 1.5; margin-top: 12px; max-width: 36ch; }
+  .cell .price { font-family: var(--mono); font-size: 13px; color: var(--white); margin-top: 18px; }
+  .cell .price span { color: var(--mute); }
+  .cell.website  { grid-column: span 6; grid-row: span 2; }
+  .cell.website .ttl { font-size: clamp(40px, 5vw, 64px); }
+  .cell.website .desc { font-size: 17px; max-width: 40ch; }
+  .cell.mobile   { grid-column: span 4; }
+  .cell.chatbot  { grid-column: span 2; }
+  .cell.chatbot .ttl, .cell.booking .ttl { font-size: 22px; }
+  .cell.chatbot .desc, .cell.booking .desc { font-size: 13px; }
+  .cell.booking  { grid-column: span 2; }
+  .cell.menu     { grid-column: span 6; }
+  .cell.seo      { grid-column: span 4; }
+  @media (max-width: 900px) {
+    .cell.website { grid-column: span 10; grid-row: span 1; }
+    .cell.mobile  { grid-column: span 10; }
+    .cell.chatbot { grid-column: span 6; }
+    .cell.booking { grid-column: span 4; }
+    .cell.menu    { grid-column: span 6; }
+    .cell.seo     { grid-column: span 4; }
+  }
+  @media (max-width: 560px) {
+    .bento { grid-template-columns: 1fr; }
+    .cell, .cell.website, .cell.mobile, .cell.chatbot, .cell.booking, .cell.menu, .cell.seo { grid-column: span 1; }
+    .cell { padding: 26px; }
+    .cell.chatbot .ttl, .cell.booking .ttl { font-size: 28px; }
+    .cell.chatbot .desc, .cell.booking .desc { font-size: 15px; }
+  }
+
+  /* ═════════ Codrops 3DCarousel (css/base.css, adapted tokens/fonts only) ═════════ */
+  .carousel-band {
+    background: linear-gradient(180deg, #000 0%, #060606 50%, #000 100%);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    padding: 0;
+  }
+  .scene {
+    perspective: 900px;
+    position: relative;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: grab;
+    touch-action: pan-y; /* vertical page scroll still works over the 100vh scene */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .scene.grabbing { cursor: grabbing; }
+  .scene__title {
+    position: relative;
+    z-index: 10;
+    margin: 0;
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: clamp(16px, 2.6vw, 28px);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+  .scene__title span { display: inline-block; }
+  .scene__hint {
+    position: absolute;
+    bottom: 10vh; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 11px; color: var(--label);
+    letter-spacing: 0.1em; text-transform: uppercase; z-index: 10;
+  }
+
+  /* Category filter pills */
+  .template-filters {
+    position: absolute;
+    top: 88px; left: 0; right: 0;
+    z-index: 20;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+    padding: 0 var(--gutter);
+  }
+  .filter-pill {
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 11px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--mute);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  .filter-pill:hover { color: var(--white); border-color: #555; }
+  .filter-pill.active { background: var(--white); color: var(--black); border-color: var(--white); }
+
+  .carousel {
+    width: 300px;
+    height: 440px;
+    top: 55%;
+    left: 50%;
+    margin: -220px 0 0 -150px;
+    position: absolute;
+    transform-style: preserve-3d;
+    will-change: transform;
+    transform: translateZ(-480px) rotateY(0deg);
+  }
+  /* drag layer: carries pointer-drag rotation so it never fights the scroll-scrub
+     timeline that GSAP runs on .carousel itself */
+  .carousel__drag {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    will-change: transform;
+    touch-action: none; /* the card orbit itself is the draggable element */
+  }
+  .carousel__cell {
+    position: absolute;
+    width: 280px;
+    height: 360px;
+    left: 0;
+    top: 0;
+    transform-style: preserve-3d;
+  }
+  .card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .card__face {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    backface-visibility: hidden;
+    background-image: var(--img);
+    background-size: cover;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .card__face--back { transform: rotateY(180deg); }
+  .card__label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 18px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  }
+  .card__label .name { font-family: var(--sans); font-weight: 700; letter-spacing: -0.02em; font-size: 18px; color: var(--white); text-transform: none; }
+  .card__label .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+  /* Explore button — appears on card hover */
+  .card__explore {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    z-index: 3;
+    font-family: var(--sans); font-size: 14px; font-weight: 500;
+    background: var(--white); color: var(--black);
+    border: none; border-radius: 100px;
+    padding: 11px 22px; cursor: pointer;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+    white-space: nowrap;
+  }
+  .card:hover .card__explore { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+  @media (max-width: 560px) {
+    .carousel { width: 220px; height: 300px; margin: -150px 0 0 -110px; transform: translateZ(-260px) rotateY(0deg); }
+    .carousel__cell { width: 200px; height: 260px; }
+    .template-filters { top: 76px; gap: 8px; }
+    .filter-pill { padding: 5px 12px; font-size: 10px; }
+  }
+
+  /* ─────────────────────────  Process — no numbers, slide-in rows  ───────────────────────── */
+  .step {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.9fr) 1.4fr auto;
+    align-items: center;
+    gap: 40px;
+    padding: 48px 0;
+    border-top: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: 1px solid var(--border); }
+  .step .name { font-size: clamp(26px, 3.6vw, 44px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; color: var(--white); }
+  .step .desc { color: var(--mute); font-size: 17px; max-width: 48ch; }
+  .step .meta { font-family: var(--mono); font-size: 13px; color: var(--mute); text-align: right; white-space: nowrap; }
+  @media (max-width: 720px) {
+    .step { grid-template-columns: 1fr; gap: 12px; padding: 36px 0; }
+    .step .meta { text-align: left; }
+  }
+
+  /* ─────────────────────────  Stats  ───────────────────────── */
+  .stats-band { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .stat {
+    padding: 56px 24px;
+    min-width: 0;
+    text-align: center;
+    overflow: hidden;
+  }
+  .stat:not(:last-child) { border-right: 1px solid var(--border); }
+  .stat .val {
+    font-size: clamp(40px, 6vw, 80px);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--white);
+  }
+  .stat .val .suffix { color: var(--mute); }
+  .stat .key { font-family: var(--mono); font-size: 13px; color: var(--mute); margin-top: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: 1fr; }
+    .stat:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat { padding: 40px 24px; }
+  }
+
+  /* ─────────────────────────  Pricing  ───────────────────────── */
+  .ptable { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .prow {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) 110px;
+    align-items: center;
+    gap: 24px;
+    padding: 26px 32px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.25s var(--ease);
+  }
+  .prow:last-child { border-bottom: none; }
+  .prow:hover { background: rgba(255,255,255,0.025); }
+  .prow.head { background: var(--surface); }
+  .prow.head .c { font-family: var(--mono); font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; }
+  .prow .name { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; color: var(--white); }
+  .prow .note { color: var(--mute); font-size: 14px; }
+  .prow .amt { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; text-align: right; font-family: var(--mono); color: var(--white); }
+  .prow .amt small { color: var(--mute); font-weight: 400; }
+  @media (max-width: 640px) {
+    .prow { grid-template-columns: 1fr auto; gap: 8px 16px; padding: 22px 20px; }
+    .prow .note { grid-column: 1 / -1; order: 3; }
+    .prow.head .note { display: none; }
+    .prow.head .c:nth-of-type(2) { display: none; }
+  }
+
+  /* ─────────────────────────  Contact  ───────────────────────── */
+  .contact-band {
+    text-align: center;
+    background:
+      radial-gradient(60% 80% at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 60%),
+      var(--black);
+    border-top: 1px solid var(--border);
+  }
+  .contact-band h2 {
+    font-size: clamp(40px, 7vw, 88px);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+    max-width: 16ch;
+    margin: 0 auto 24px;
+    color: var(--white);
+  }
+  .contact-band p.lead { font-size: 19px; color: var(--mute); max-width: 46ch; margin: 0 auto 40px; }
+  #typebot-container {
+    max-width: 560px; margin: 48px auto 0; min-height: 120px;
+    border: 1px solid var(--border); border-radius: 16px;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px;
+  }
+  #typebot-container .tb-fallback { text-align: center; }
+  #typebot-container .tb-fallback .eyebrow { display: block; margin-bottom: 12px; }
+  #typebot-container .tb-fallback a { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; border-bottom: 1px solid var(--border); transition: border-color 0.2s; }
+  #typebot-container .tb-fallback a:hover { border-color: var(--white); }
+  .contact-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ─────────────────────────  Footer  ───────────────────────── */
+  footer { border-top: 1px solid var(--border); padding: 48px 0; }
+  footer .wrap { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  footer .logo { font-size: 16px; }
+  footer .meta { font-family: var(--mono); font-size: 12px; color: var(--mute); }
+  footer .links { display: flex; gap: 20px; }
+  footer .links a { font-size: 14px; color: var(--mute); transition: color 0.2s; }
+  footer .links a:hover { color: var(--white); }
+
+  /* ─────────────────────────  Scroll reveal helpers  ───────────────────────── */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s var(--ease), transform 0.8s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal.d1 { transition-delay: 0.08s; }
+  .reveal.d2 { transition-delay: 0.16s; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .star { animation: none; }
+  }
+</style>
+  <script type="module" crossorigin src="/assets/index-X_Ls-tlp.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Dc3m5dbN.css">
+</head>
+<body>
+<div id="app" data-layer="home">
+
+<!-- ───────────────  NAV  ─────────────── -->
+<nav id="nav">
+  <div class="wrap">
+    <a href="#top" class="logo">Prezance</a>
+    <div class="nav-links">
+      <a href="#services">Services</a>
+      <a href="#templates">Templates</a>
+      <a href="#process">Process</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#contact" class="nav-cta cta-button">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ───────────────  HERO  ─────────────── -->
+<header class="hero" id="top">
+  <div class="hero-fallback"></div>
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="moonlight" aria-hidden="true"></div>
+  <canvas id="particle-canvas"></canvas>
+  <div class="wrap">
+    <h1 id="hero-headline">Your presence,<br />perfected.</h1>
+    <p class="sub">AI-powered websites, apps and digital tools for professionals.</p>
+    <div class="hero-cta">
+      <a href="#templates" class="btn btn-primary cta-button">See our work</a>
+      <a href="#contact" class="btn btn-secondary cta-button">Get started</a>
+    </div>
+  </div>
+</header>
+
+<!-- ───────────────  BENTO — SERVICES  ─────────────── -->
+<section class="band section" id="services">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">What we build</span>
+      <h2>Everything your presence needs.</h2>
+      <p>Six productised services, templated for speed and tuned for professionals. Pick what you need — we ship the rest.</p>
+    </div>
+
+    <div class="bento">
+      <article class="cell website reveal">
+        <div class="tag">Flagship</div>
+        <div>
+          <h3 class="ttl">Professional<br />Website</h3>
+          <p class="desc">A fast, conversion-ready site built on a hand-picked template and tailored to your brand. Hosting, domain and SEO basics included.</p>
+        </div>
+        <div class="price">From $250 <span>· 3 tiers</span></div>
+      </article>
+
+      <article class="cell mobile reveal d1">
+        <div>
+          <h3 class="ttl">Mobile App</h3>
+          <p class="desc">Native-feel iOS &amp; Android apps for booking, ordering and client portals.</p>
+        </div>
+        <div class="price">From $1,500</div>
+      </article>
+
+      <article class="cell chatbot reveal d2">
+        <div>
+          <h3 class="ttl">AI Chatbot</h3>
+          <p class="desc">Prezi answers questions and captures leads 24/7.</p>
+        </div>
+        <div class="price">$200</div>
+      </article>
+
+      <article class="cell booking reveal d2">
+        <div>
+          <h3 class="ttl">Booking System</h3>
+          <p class="desc">Calendar, reminders, payments.</p>
+        </div>
+        <div class="price">$150</div>
+      </article>
+
+      <article class="cell menu reveal">
+        <div>
+          <h3 class="ttl">Digital Menu</h3>
+          <p class="desc">QR-ready menus that update in seconds — no reprints, no waiting.</p>
+        </div>
+        <div class="price">$150</div>
+      </article>
+
+      <article class="cell seo reveal d1">
+        <div>
+          <h3 class="ttl">Google &amp; SEO</h3>
+          <p class="desc">Business Profile setup and search foundations.</p>
+        </div>
+        <div class="price">$100</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────  PROXIMITY GRID — INDUSTRIES  ─────────────── -->
+<section class="section prox-section" id="industries">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Industries</span>
+      <h2>Built for your world.</h2>
+      <p>Every industry has its own rhythm. We build for the ones that matter.</p>
+    </div>
+  </div>
+  <div class="prox-stage" id="proxStage">
+    <div class="prox-grid">
+      <div class="prox-card" style="--x:8%;--y:12%;--r:-3deg;--card-bg:#0f2a1e;--card-border:#1a4a30;--card-accent:#2ecc71;">
+        <span class="prox-tag" style="background:#1a4a30;color:#2ecc71;">Medical</span>
+        <span class="prox-title">Medical &amp; Health</span>
+        <span class="prox-sub">Clinics, specialists, wellness</span>
+      </div>
+
+      <div class="prox-card" style="--x:38%;--y:6%;--r:2deg;--card-bg:#2a1200;--card-border:#4a2200;--card-accent:#e67e22;">
+        <span class="prox-tag" style="background:#4a2200;color:#e67e22;">Restaurant</span>
+        <span class="prox-title">Restaurant &amp; Dining</span>
+        <span class="prox-sub">Fine dining, cafés, catering</span>
+      </div>
+
+      <div class="prox-card" style="--x:68%;--y:10%;--r:-2deg;--card-bg:#0e1a2e;--card-border:#1a2e4a;--card-accent:#5b9bd5;">
+        <span class="prox-tag" style="background:#1a2e4a;color:#5b9bd5;">Law</span>
+        <span class="prox-title">Law &amp; Professional</span>
+        <span class="prox-sub">Firms, consultants, advisors</span>
+      </div>
+
+      <div class="prox-card" style="--x:20%;--y:52%;--r:3deg;--card-bg:#1a0a2e;--card-border:#2e1050;--card-accent:#9b59b6;">
+        <span class="prox-tag" style="background:#2e1050;color:#9b59b6;">SaaS</span>
+        <span class="prox-title">SaaS &amp; Apps</span>
+        <span class="prox-sub">Startups, tools, platforms</span>
+      </div>
+
+      <div class="prox-card" style="--x:52%;--y:55%;--r:-4deg;--card-bg:#1a1500;--card-border:#2e2400;--card-accent:#f1c40f;">
+        <span class="prox-tag" style="background:#2e2400;color:#f1c40f;">Business</span>
+        <span class="prox-title">Business &amp; Corporate</span>
+        <span class="prox-sub">SMEs, retail, real estate</span>
+      </div>
+    </div>
+    <span class="prox-hint">move cursor over the grid</span>
+  </div>
+</section>
+
+<style>
+  .prox-section { padding: 120px 0 60px; }
+  .prox-stage {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    margin-top: 64px;
+    overflow: hidden;
+  }
+  .prox-grid { position: absolute; inset: 0; }
+  .prox-card {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    rotate: var(--r);
+    width: 200px;
+    background: var(--card-bg, var(--surface-2));
+    border: 1px solid var(--card-border, var(--border));
+    border-radius: 16px;
+    padding: 20px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: default;
+    transform-origin: center center;
+    will-change: transform;
+  }
+  .prox-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 100px;
+    width: fit-content;
+    margin-bottom: 6px;
+  }
+  .prox-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+  .prox-sub {
+    font-size: 12px;
+    color: var(--mute);
+    line-height: 1.4;
+  }
+  .prox-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--label);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+</style>
+
+
+<!-- ═══════════  TEMPLATE GALLERY — 3D RING CAROUSEL + CATEGORY FILTERS  ═══════════ -->
+<section class="section carousel-band" id="templates">
+  <div class="template-filters" id="template-filters" role="tablist" aria-label="Filter templates by category">
+    <button class="filter-pill active" type="button" data-filter="all" aria-selected="true">All</button>
+    <button class="filter-pill" type="button" data-filter="medical" aria-selected="false">Medical</button>
+    <button class="filter-pill" type="button" data-filter="restaurant" aria-selected="false">Restaurant</button>
+    <button class="filter-pill" type="button" data-filter="law" aria-selected="false">Law</button>
+    <button class="filter-pill" type="button" data-filter="business" aria-selected="false">Business</button>
+    <button class="filter-pill" type="button" data-filter="saas" aria-selected="false">SaaS & Apps</button>
+  </div>
+  <div class="scene-wrapper">
+    <div class="scene" data-radius="650">
+      <h2 class="scene__title"><span>Choose your design</span></h2>
+      <div class="carousel">
+        <div class="carousel__drag" id="carousel-drag"><!-- cards injected by JS from the manifest --></div>
+      </div>
+      <div class="scene__hint">Drag or scroll to rotate · hover a card to explore</div>
+    </div>
+  </div>
+  <!-- / scene-wrapper -->
+</section>
+
+<!-- ───────────────  HOW IT WORKS — NO NUMBERS  ─────────────── -->
+<section class="band section" id="process">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>Live in three steps.</h2>
+    </div>
+
+    <div class="step process-step">
+      <div class="name">Choose a template</div>
+      <div class="desc">Browse the gallery and pick the design that fits your profession. We adapt it to your brand, content and colours.</div>
+      <div class="meta">Day 0</div>
+    </div>
+
+    <div class="step process-step">
+      <div class="name">Built in 72 hours</div>
+      <div class="desc">Our team and AI tooling build, populate and polish your site, app or tool — fast, without the agency wait.</div>
+      <div class="meta">72 hr build</div>
+    </div>
+
+    <div class="step process-step">
+      <div class="name">Go live</div>
+      <div class="desc">We deploy to your domain, connect analytics and hand over the keys. Updates whenever you need them.</div>
+      <div class="meta">Launch day</div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────  STATS  ─────────────── -->
+<section class="stats-band section">
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat">
+        <div class="val"><span class="count" data-to="150">0</span><span class="suffix">+</span></div>
+        <div class="key">Websites delivered</div>
+      </div>
+      <div class="stat">
+        <div class="val"><span class="count" data-to="6">0</span></div>
+        <div class="key">Industries served</div>
+      </div>
+      <div class="stat">
+        <div class="val"><span class="count" data-to="72">0</span><span class="suffix">hr</span></div>
+        <div class="key">Average delivery</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────  PRICING  ─────────────── -->
+<section class="band section" id="pricing">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Pricing</span>
+      <h2>Simple, fixed pricing.</h2>
+      <p>No retainers, no surprises. Pick a package, pay once, go live.</p>
+    </div>
+
+    <div class="ptable reveal d1">
+      <div class="prow head">
+        <div class="c">Service</div>
+        <div class="c">Includes</div>
+        <div class="c" style="text-align:right">Price</div>
+      </div>
+      <div class="prow">
+        <div class="name">Website — Starter</div>
+        <div class="note">One-page site, mobile-ready, contact form</div>
+        <div class="amt">$250</div>
+      </div>
+      <div class="prow">
+        <div class="name">Website — Standard</div>
+        <div class="note">Multi-page, SEO basics, custom sections</div>
+        <div class="amt">$500</div>
+      </div>
+      <div class="prow">
+        <div class="name">Website — Premium</div>
+        <div class="note">Full build, animations, integrations</div>
+        <div class="amt">$900</div>
+      </div>
+      <div class="prow">
+        <div class="name">Mobile App</div>
+        <div class="note">iOS &amp; Android, booking or ordering</div>
+        <div class="amt">$1,500<small>+</small></div>
+      </div>
+      <div class="prow">
+        <div class="name">AI Chatbot</div>
+        <div class="note">Prezi assistant, lead capture</div>
+        <div class="amt">$200</div>
+      </div>
+      <div class="prow">
+        <div class="name">Booking System</div>
+        <div class="note">Calendar, reminders, payments</div>
+        <div class="amt">$150</div>
+      </div>
+      <div class="prow">
+        <div class="name">Digital Menu</div>
+        <div class="note">QR menu, instant updates</div>
+        <div class="amt">$150</div>
+      </div>
+      <div class="prow">
+        <div class="name">Google &amp; SEO Setup</div>
+        <div class="note">Business Profile + search foundations</div>
+        <div class="amt">$100</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────  CONTACT  ─────────────── -->
+<section class="band section contact-band" id="contact">
+  <div class="wrap">
+    <span class="eyebrow reveal" style="display:block;margin-bottom:20px">Let's build it</span>
+    <h2>Ready to perfect your presence?</h2>
+    <p class="lead reveal d1">Tell Prezi what you need. We'll scope it, price it and start the 72-hour clock.</p>
+    <div class="contact-cta reveal d1">
+      <a href="mailto:hello@prezance.co" class="btn btn-primary cta-button">Start a project</a>
+      <a href="#templates" class="btn btn-secondary cta-button">Browse templates</a>
+    </div>
+
+    <div id="typebot-container" class="reveal d2">
+      <div class="tb-fallback">
+        <span class="eyebrow">Talk to Prezi or email us</span>
+        <a href="mailto:hello@prezance.co">hello@prezance.co</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────  FOOTER  ─────────────── -->
+<footer>
+  <div class="wrap">
+    <a href="#top" class="logo">Prezance</a>
+    <div class="links">
+      <a href="#services">Services</a>
+      <a href="#pricing">Pricing</a>
+      <a href="mailto:hello@prezance.co">hello@prezance.co</a>
+    </div>
+    <div class="meta">© 2026 Prezance · Your presence, perfected.</div>
+  </div>
+</footer>
+
+<!-- ───────────────  EFFECT OVERLAYS  ─────────────── -->
+<div id="spotlight" aria-hidden="true"></div>
+<div id="cursor-label" aria-hidden="true"></div>
+
+</div><!-- /#app -->
+
+
+<!-- Prezi chatbot widget -->
+
+</body>
+</html>

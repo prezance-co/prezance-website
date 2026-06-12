@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Al Noor Medical Centre — Care, considered.</title>
+<meta name="description" content="Al Noor Medical Centre. Consultant-led internal medicine with time, attention and precision — led by Dr. Sarah Al-Rashidi." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231E4D40'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' fill='%23ffffff' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<style>
+  :root{
+    --ivory:#FAF6F0; --ivory-2:#F3EDE3; --ink:#152521; --ink-soft:#3D514B;
+    --mute:#7C8A85; --line:#E2D9CB; --pine:#1E4D40; --pine-deep:#143830;
+    --gold:#B98E4E; --gold-soft:#B98E4E22;
+    --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--ivory);color:var(--ink);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+  h1,h2,h3{font-family:var(--serif);font-weight:400;color:var(--ink)}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.025;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:54px;padding:0 34px;border-radius:999px;font-weight:500;font-size:15px;cursor:pointer;border:1px solid transparent;transition:background .25s,color .25s,border-color .25s,transform .25s}
+  .btn-ink{background:var(--pine);color:var(--ivory)}
+  .btn-ink:hover{background:var(--pine-deep);transform:translateY(-2px)}
+  .btn-line{border-color:var(--ink);color:var(--ink);background:transparent}
+  .btn-line:hover{background:var(--ink);color:var(--ivory)}
+  /* nav */
+  nav{position:fixed;inset:0 0 auto 0;z-index:100;transition:background .35s,box-shadow .35s}
+  nav.on{background:rgba(250,246,240,.88);backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:84px}
+  .logo{display:flex;align-items:baseline;gap:12px}
+  .logo .mark{font-family:var(--serif);font-size:26px;letter-spacing:-.01em}
+  .logo .sub{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--mute)}
+  nav .links{display:flex;align-items:center;gap:34px}
+  nav .links a.l{font-size:14px;color:var(--ink-soft);position:relative}
+  nav .links a.l::after{content:"";position:absolute;left:0;bottom:-6px;height:1px;width:0;background:var(--gold);transition:width .3s}
+  nav .links a.l:hover::after{width:100%}
+  nav .links .btn{height:44px;padding:0 24px;font-size:14px}
+  @media(max-width:880px){nav .links a.l{display:none}}
+  /* hero */
+  .hero{position:relative;min-height:100svh;display:flex;align-items:flex-end;overflow:hidden;
+    background:
+      radial-gradient(90% 70% at 78% 18%, #DCE7E0 0%, transparent 55%),
+      radial-gradient(70% 60% at 12% 85%, #EFE3CE 0%, transparent 60%),
+      linear-gradient(168deg,#F6F1E8 0%, #EDE5D6 48%, #E2D8C4 100%)}
+  .hero .arch{position:absolute;right:6vw;top:12vh;width:min(36vw,480px);aspect-ratio:0.62;border-radius:999px 999px 0 0;
+    background:linear-gradient(180deg,#1E4D40 0%, #2C6253 55%, #98B4A6 100%);opacity:.92}
+  .hero .arch.b{right:calc(6vw + min(10vw,128px));top:30vh;width:min(22vw,290px);
+    background:linear-gradient(180deg,#B98E4E 0%, #D6BA8A 70%, #EBDFC8 100%);opacity:.55;mix-blend-mode:multiply}
+  @media(max-width:880px){.hero .arch{opacity:.35}.hero .arch.b{opacity:.25}}
+  .hero .wrap{position:relative;z-index:2;padding-bottom:9vh;padding-top:18vh;width:100%}
+  .hero .eyebrow{display:block;margin-bottom:26px}
+  .hero h1{font-size:clamp(52px,7.4vw,108px);line-height:1.02;letter-spacing:-.015em;max-width:11ch;font-weight:300}
+  .hero h1 em{font-style:italic;font-weight:400;color:var(--pine)}
+  .hero .sub{margin-top:30px;font-size:19px;color:var(--ink-soft);max-width:46ch}
+  .hero .cta{display:flex;gap:14px;margin-top:42px;flex-wrap:wrap}
+  .hero .strip{display:grid;grid-template-columns:repeat(3,auto);gap:clamp(28px,6vw,90px);margin-top:9vh;padding-top:34px;border-top:1px solid rgba(21,37,33,.18);width:fit-content}
+  .strip .s .v{font-family:var(--serif);font-size:clamp(28px,3vw,40px);color:var(--ink)}
+  .strip .s .k{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-top:4px}
+  /* sections */
+  section{position:relative}
+  .band{padding:clamp(90px,12vw,150px) 0}
+  .s-head{max-width:760px;margin-bottom:70px}
+  .s-head h2{font-size:clamp(36px,4.6vw,58px);line-height:1.08;font-weight:300;letter-spacing:-.01em}
+  .s-head h2 em{font-style:italic;color:var(--pine)}
+  .s-head p{margin-top:20px;font-size:18px;color:var(--ink-soft);max-width:56ch}
+  .s-head .eyebrow{display:block;margin-bottom:20px}
+  /* about */
+  .about{background:var(--ivory)}
+  .about .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(40px,6vw,100px);align-items:center}
+  @media(max-width:900px){.about .grid{grid-template-columns:1fr}}
+  .about .art{position:relative;aspect-ratio:.84;border-radius:260px 260px 18px 18px;overflow:hidden;
+    background:
+     radial-gradient(120% 90% at 30% 10%, #2C6253 0%, transparent 60%),
+     linear-gradient(170deg,#1E4D40, #143830 70%)}
+  .about .art::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(60% 45% at 68% 72%, rgba(185,142,78,.5), transparent 70%)}
+  .about .art .halo{position:absolute;left:50%;top:38%;width:58%;aspect-ratio:1;border-radius:50%;transform:translateX(-50%);
+    border:1px solid rgba(250,246,240,.35)}
+  .about .art .halo.h2{width:78%;opacity:.5}
+  .about .art .halo.h3{width:98%;opacity:.25}
+  .about h2{font-size:clamp(34px,4vw,52px);font-weight:300;line-height:1.1}
+  .about h2 em{font-style:italic;color:var(--pine)}
+  .about p{margin-top:22px;color:var(--ink-soft);font-size:17px;max-width:54ch}
+  .about .marks{display:grid;grid-template-columns:1fr 1fr;gap:26px 40px;margin-top:40px}
+  @media(max-width:560px){.about .marks{grid-template-columns:1fr}}
+  .about .mark .t{font-family:var(--serif);font-size:20px}
+  .about .mark .d{font-size:14px;color:var(--mute);margin-top:4px}
+  /* services */
+  .services{background:linear-gradient(180deg,var(--ivory) 0%, var(--ivory-2) 100%)}
+  .svc{display:grid;grid-template-columns:90px 1fr 1.2fr auto;gap:30px;align-items:center;padding:38px 8px;border-top:1px solid var(--line);transition:background .3s}
+  .svc:last-of-type{border-bottom:1px solid var(--line)}
+  .svc:hover{background:rgba(30,77,64,.045)}
+  .svc .no{font-family:var(--serif);font-size:15px;color:var(--gold)}
+  .svc h3{font-size:clamp(22px,2.6vw,32px);font-weight:400;letter-spacing:-.01em}
+  .svc p{color:var(--ink-soft);font-size:15.5px;max-width:46ch}
+  .svc .go{width:52px;height:52px;border-radius:50%;border:1px solid var(--ink);display:grid;place-items:center;transition:background .3s,color .3s,transform .3s;font-size:18px}
+  .svc:hover .go{background:var(--pine);border-color:var(--pine);color:var(--ivory);transform:rotate(-45deg)}
+  @media(max-width:880px){.svc{grid-template-columns:48px 1fr}.svc p{grid-column:2}.svc .go{display:none}}
+  /* doctor bio */
+  .bio{background:var(--pine-deep);color:#EDE9E0}
+  .bio .grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:clamp(44px,7vw,110px);align-items:center}
+  @media(max-width:900px){.bio .grid{grid-template-columns:1fr}}
+  .bio .portrait{position:relative;aspect-ratio:.8;border-radius:14px;overflow:hidden;
+    background:linear-gradient(160deg,#235447 0%, #16382F 60%, #0E2620 100%)}
+  .bio .portrait .fig{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:74%;aspect-ratio:.62;
+    border-radius:999px 999px 0 0;background:linear-gradient(180deg,#D8C9AE 0%, #C2AE8C 40%, #8FA396 100%);opacity:.9}
+  .bio .portrait .fig::after{content:"";position:absolute;left:50%;top:14%;transform:translateX(-50%);width:46%;aspect-ratio:1;border-radius:50%;
+    background:linear-gradient(160deg,#EFE3CE, #CBB592)}
+  .bio .portrait .tag{position:absolute;left:22px;bottom:22px;background:rgba(250,246,240,.92);color:var(--ink);border-radius:10px;padding:14px 18px;backdrop-filter:blur(6px)}
+  .bio .portrait .tag .n{font-family:var(--serif);font-size:18px}
+  .bio .portrait .tag .r{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:2px}
+  .bio h2{font-size:clamp(34px,4.4vw,54px);font-weight:300;color:#F4EFE5;line-height:1.1}
+  .bio h2 em{font-style:italic;color:#D9BC8C}
+  .bio .lead{margin-top:24px;font-size:18px;color:#C9CFC6;max-width:52ch}
+  .bio blockquote{margin:34px 0;padding-left:24px;border-left:1px solid #D9BC8C;font-family:var(--serif);font-size:22px;font-style:italic;line-height:1.45;color:#EDE4CF;max-width:46ch}
+  .bio .creds{display:grid;grid-template-columns:1fr 1fr;gap:18px 36px;margin-top:36px}
+  @media(max-width:560px){.bio .creds{grid-template-columns:1fr}}
+  .bio .cred{display:flex;gap:14px;align-items:flex-start;font-size:14.5px;color:#C9CFC6}
+  .bio .cred .d{width:7px;height:7px;border-radius:50%;background:#D9BC8C;margin-top:7px;flex:0 0 7px}
+  /* appointments */
+  .appt{background:var(--ivory)}
+  .appt .grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,6vw,90px)}
+  @media(max-width:900px){.appt .grid{grid-template-columns:1fr}}
+  .hours{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff8}
+  .hours .row{display:flex;justify-content:space-between;padding:20px 26px;border-bottom:1px solid var(--line);font-size:15px}
+  .hours .row:last-of-type{border-bottom:none}
+  .hours .row .d{color:var(--ink-soft)}
+  .hours .row .t{font-weight:500}
+  .hours .row.closed .t{color:var(--mute);font-weight:400}
+  .hours .note{padding:18px 26px;background:var(--gold-soft);font-size:13.5px;color:var(--ink-soft);border-top:1px solid var(--line)}
+  form .field{margin-bottom:18px}
+  form label{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+  form input,form select,form textarea{width:100%;height:54px;border:1px solid var(--line);background:#FFFDF9;border-radius:10px;padding:0 18px;font-family:var(--sans);font-size:15px;color:var(--ink);transition:border-color .25s,box-shadow .25s}
+  form textarea{height:120px;padding:14px 18px;resize:vertical}
+  form input:focus,form select:focus,form textarea:focus{outline:none;border-color:var(--pine);box-shadow:0 0 0 4px rgba(30,77,64,.08)}
+  form .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){form .row2{grid-template-columns:1fr}}
+  form .btn{width:100%;margin-top:8px}
+  /* contact / footer */
+  .contact{background:var(--ivory-2);border-top:1px solid var(--line)}
+  .contact .grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:clamp(36px,5vw,80px)}
+  @media(max-width:880px){.contact .grid{grid-template-columns:1fr}}
+  .contact h2{font-size:clamp(34px,4.4vw,56px);font-weight:300;line-height:1.08;max-width:14ch}
+  .contact h2 em{font-style:italic;color:var(--pine)}
+  .contact .col h4{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;font-family:var(--sans);font-weight:600}
+  .contact .col p,.contact .col a{display:block;color:var(--ink-soft);font-size:16px;line-height:1.9}
+  .contact .col a:hover{color:var(--pine)}
+  footer{background:var(--ivory-2);padding:34px 0;border-top:1px solid var(--line)}
+  footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mute)}
+  /* reveals */
+  .rv{opacity:0;transform:translateY(44px);will-change:transform,opacity}
+  .parx{will-change:transform}
+  @media (prefers-reduced-motion: reduce){.rv{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap">
+    <a class="logo" href="#top">
+      <span class="mark">Al Noor</span>
+      <span class="sub">Medical Centre</span>
+    </a>
+    <div class="links">
+      <a class="l" href="#about">The Centre</a>
+      <a class="l" href="#services">Services</a>
+      <a class="l" href="#doctor">Dr. Al-Rashidi</a>
+      <a class="l" href="#contact">Contact</a>
+      <a class="btn btn-ink" href="#appointments">Book a consultation</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="arch parx" data-speed="0.12"></div>
+  <div class="arch b parx" data-speed="0.22"></div>
+  <div class="wrap">
+    <span class="eyebrow rv">Consultant-led internal medicine</span>
+    <h1 class="rv">Care, <em>considered.</em></h1>
+    <p class="sub rv">At Al Noor Medical Centre, every consultation is given the time it deserves — unhurried, thorough and built around you, not the clock.</p>
+    <div class="cta rv">
+      <a class="btn btn-ink" href="#appointments">Book a consultation</a>
+      <a class="btn btn-line" href="#about">Discover the centre</a>
+    </div>
+    <div class="strip rv">
+      <div class="s"><div class="v"><span data-count="18">0</span></div><div class="k">Years of practice</div></div>
+      <div class="s"><div class="v"><span data-count="40">0</span> min</div><div class="k">Minimum consultation</div></div>
+      <div class="s"><div class="v"><span data-count="9">0</span>,000+</div><div class="k">Patients cared for</div></div>
+    </div>
+  </div>
+</header>
+
+<section class="band about" id="about">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <span class="eyebrow rv">The Centre</span>
+        <h2 class="rv" style="margin-top:18px">Medicine that <em>listens</em> before it treats.</h2>
+        <p class="rv">Al Noor was founded on a simple conviction: that good medicine begins with attention. Our consultations are long by design, our investigations are chosen with restraint, and our advice is explained until it is fully understood.</p>
+        <p class="rv">From preventive health to the management of complex, long-term conditions, we bring hospital-grade rigour into a setting that feels considered and calm.</p>
+        <div class="marks">
+          <div class="mark rv"><div class="t">Unhurried by design</div><div class="d">Forty-minute consultations as standard.</div></div>
+          <div class="mark rv"><div class="t">Evidence first</div><div class="d">Investigations guided by evidence, not habit.</div></div>
+          <div class="mark rv"><div class="t">One physician</div><div class="d">Continuity with the same consultant, always.</div></div>
+          <div class="mark rv"><div class="t">Same-week access</div><div class="d">New patients seen within five working days.</div></div>
+        </div>
+      </div>
+      <div class="art rv parx" data-speed="-0.06" aria-hidden="true">
+        <span class="halo"></span><span class="halo h2"></span><span class="halo h3"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band services" id="services">
+  <div class="wrap">
+    <div class="s-head">
+      <span class="eyebrow rv">What we do</span>
+      <h2 class="rv">Six disciplines, <em>one standard</em> of care.</h2>
+    </div>
+
+    <div class="svc rv">
+      <div class="no">01</div>
+      <h3>Comprehensive Health Assessment</h3>
+      <p>A full-day review of your health — history, examination, laboratory panel and a written plan you can act on.</p>
+      <div class="go">→</div>
+    </div>
+    <div class="svc rv">
+      <div class="no">02</div>
+      <h3>Chronic Disease Management</h3>
+      <p>Diabetes, hypertension and thyroid disorders managed with structure, follow-up and clear targets.</p>
+      <div class="go">→</div>
+    </div>
+    <div class="svc rv">
+      <div class="no">03</div>
+      <h3>Preventive Cardiology</h3>
+      <p>Risk profiling, lipid management and lifestyle programmes designed to keep hearts out of hospital.</p>
+      <div class="go">→</div>
+    </div>
+    <div class="svc rv">
+      <div class="no">04</div>
+      <h3>Women's Health Medicine</h3>
+      <p>Hormonal, metabolic and bone health across every stage of life, handled with discretion and depth.</p>
+      <div class="go">→</div>
+    </div>
+    <div class="svc rv">
+      <div class="no">05</div>
+      <h3>Travel &amp; Occupational Medicine</h3>
+      <p>Pre-travel consultations, vaccinations and fitness-for-work assessments with same-week reporting.</p>
+      <div class="go">→</div>
+    </div>
+    <div class="svc rv">
+      <div class="no">06</div>
+      <h3>Second Opinions</h3>
+      <p>A careful, independent review of an existing diagnosis or treatment plan — documented and explained.</p>
+      <div class="go">→</div>
+    </div>
+  </div>
+</section>
+
+<section class="band bio" id="doctor">
+  <div class="wrap">
+    <div class="grid">
+      <div class="portrait rv parx" data-speed="-0.05" aria-hidden="true">
+        <div class="fig"></div>
+        <div class="tag"><div class="n">Dr. Sarah Al-Rashidi</div><div class="r">Consultant Physician</div></div>
+      </div>
+      <div>
+        <span class="eyebrow rv" style="color:#D9BC8C">The physician</span>
+        <h2 class="rv" style="margin-top:18px">Two decades of medicine, <em>practised personally.</em></h2>
+        <p class="lead rv">Dr. Al-Rashidi trained in internal medicine at major teaching hospitals before founding Al Noor — a centre built around the kind of medicine she wanted for her own family.</p>
+        <blockquote class="rv">“Patients rarely need more medicine. They need more attention — the diagnosis usually follows.”</blockquote>
+        <div class="creds">
+          <div class="cred rv"><span class="d"></span>Fellowship in Internal Medicine, university teaching hospital</div>
+          <div class="cred rv"><span class="d"></span>Board-certified Consultant Physician — 18 years in practice</div>
+          <div class="cred rv"><span class="d"></span>Member, international societies of internal &amp; preventive medicine</div>
+          <div class="cred rv"><span class="d"></span>Published researcher in metabolic &amp; preventive health</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band appt" id="appointments">
+  <div class="wrap">
+    <div class="s-head">
+      <span class="eyebrow rv">Appointments</span>
+      <h2 class="rv">Reserve time <em>with your physician.</em></h2>
+      <p class="rv">Send a request below — our coordinators confirm every appointment personally within one working day.</p>
+    </div>
+    <div class="grid">
+      <div class="rv">
+        <div class="hours">
+          <div class="row"><span class="d">Sunday — Thursday</span><span class="t">9:00 — 19:00</span></div>
+          <div class="row"><span class="d">Saturday</span><span class="t">10:00 — 16:00</span></div>
+          <div class="row closed"><span class="d">Friday</span><span class="t">Closed</span></div>
+          <div class="note">Extended evening clinics are available on request for follow-up patients.</div>
+        </div>
+      </div>
+      <form class="rv" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Request received — we will confirm shortly';">
+        <div class="row2">
+          <div class="field"><label>Full name</label><input type="text" placeholder="Your name" required /></div>
+          <div class="field"><label>Phone</label><input type="tel" placeholder="Your number" required /></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Preferred day</label>
+            <select><option>Any weekday</option><option>Sunday</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Saturday</option></select>
+          </div>
+          <div class="field"><label>Consultation type</label>
+            <select><option>New consultation</option><option>Follow-up</option><option>Health assessment</option><option>Second opinion</option></select>
+          </div>
+        </div>
+        <div class="field"><label>Notes (optional)</label><textarea placeholder="Anything you would like the doctor to know in advance"></textarea></div>
+        <button class="btn btn-ink" type="submit">Request appointment</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="band contact" id="contact">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <span class="eyebrow rv">Contact</span>
+        <h2 class="rv" style="margin-top:16px">We are <em>at your side.</em></h2>
+      </div>
+      <div class="col rv">
+        <h4>Speak to us</h4>
+        <a href="tel:+0005550140">+— 555 0140</a>
+        <a href="mailto:care@alnoormedical.example">care@alnoormedical.example</a>
+        <p>Messages answered within the hour.</p>
+      </div>
+      <div class="col rv">
+        <h4>Visit us</h4>
+        <p>Al Noor Medical Centre<br />Suite 4, The Garden Pavilion<br />Free parking · wheelchair access</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Al Noor Medical Centre — Dr. Sarah Al-Rashidi, Consultant Physician</span>
+    <span>Care, considered.</span>
+  </div>
+</footer>
+
+<script>
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* Lenis smooth scroll wired into GSAP's ticker */
+  let lenis = null;
+  if (window.Lenis && !reduced) {
+    lenis = new Lenis({ duration: 1.25, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(t => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (!t) return; e.preventDefault();
+      lenis ? lenis.scrollTo(t, { offset: -70 }) : t.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  /* nav surface on scroll */
+  const nav = document.getElementById('nav');
+  const navToggle = () => nav.classList.toggle('on', (lenis ? lenis.scroll : scrollY) > 30);
+  window.addEventListener('scroll', navToggle, { passive: true });
+  if (lenis) lenis.on('scroll', navToggle);
+
+  if (!reduced) {
+    /* hero entrance choreography */
+    gsap.timeline({ defaults: { ease: 'power3.out' } })
+      .to('.hero .eyebrow.rv', { opacity: 1, y: 0, duration: .7 }, .15)
+      .to('.hero h1.rv', { opacity: 1, y: 0, duration: 1 }, .25)
+      .to('.hero .sub.rv', { opacity: 1, y: 0, duration: .9 }, .45)
+      .to('.hero .cta.rv', { opacity: 1, y: 0, duration: .9 }, .6)
+      .to('.hero .strip.rv', { opacity: 1, y: 0, duration: .9 }, .75);
+
+    /* scroll reveals */
+    gsap.utils.toArray('section .rv').forEach(el => {
+      gsap.to(el, { opacity: 1, y: 0, duration: 1, ease: 'power3.out',
+        scrollTrigger: { trigger: el, start: 'top 86%', once: true } });
+    });
+
+    /* gentle parallax on decorative shapes */
+    gsap.utils.toArray('.parx').forEach(el => {
+      const sp = parseFloat(el.dataset.speed || 0.1);
+      gsap.to(el, { yPercent: sp * 100, ease: 'none',
+        scrollTrigger: { trigger: el.closest('section, header'), start: 'top bottom', end: 'bottom top', scrub: true } });
+    });
+
+    /* counters — fire on scroll entry, with a late check for ones already in view
+       (font loading shifts layout, so the measurement is re-done after settle) */
+    document.querySelectorAll('[data-count]').forEach(el => {
+      const to = +el.dataset.count;
+      let fired = false;
+      const run = () => { if (fired) return; fired = true;
+        gsap.fromTo(el, { innerText: 0 }, { innerText: to, duration: 1.6, ease: 'power2.out', snap: { innerText: 1 } }); };
+      ScrollTrigger.create({ trigger: el, start: 'top 95%', once: true, onEnter: run });
+      gsap.delayedCall(1.1, () => { if (el.getBoundingClientRect().top < innerHeight) run(); });
+    });
+  } else {
+    document.querySelectorAll('.rv').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+    document.querySelectorAll('[data-count]').forEach(el => el.textContent = el.dataset.count);
+  }
+</script>
+</body>
+</html>

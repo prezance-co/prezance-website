@@ -1,0 +1,251 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bistro Elegance - Fine Dining Experience</title>
+    <link rel="stylesheet" href="tooplate-bistro-elegance.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
+    <style>
+        .grain {
+            position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: .045;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-size: 200px 200px;
+        }
+        .fixed-bg {
+            position: fixed; inset: 0; z-index: 0;
+            background: url('images/restaurant-tables.jpg') center center / cover no-repeat;
+        }
+        .bg-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.55); }
+        .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.6) 100%); }
+        .hero {
+            position: relative; z-index: 1; background: transparent !important;
+            display: flex; align-items: center; justify-content: center; min-height: 100vh;
+        }
+        .hero .diagonal-grid, .hero .static-decoration, .hero .bottom-right-decoration { display: none; }
+        .hero-content {
+            text-align: center; color: #fff; padding: 2rem; position: relative; z-index: 2;
+            animation: heroFadeIn 1.3s ease 0.2s both;
+        }
+        @keyframes heroFadeIn { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+        .hero-content h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.8rem, 6vw, 5.5rem); font-weight: 300;
+            letter-spacing: 0.06em; color: #fff; text-shadow: 0 2px 40px rgba(0,0,0,0.6); margin-bottom: 1.2rem;
+        }
+        .hero-content p { font-size: clamp(1rem,2vw,1.25rem); color: rgba(255,255,255,0.82); margin-bottom: 2rem; font-weight: 300; letter-spacing: 0.04em; }
+        .hero-content .text-option { display: none; }
+        .hero-content .text-option:first-child { display: inline; }
+        .cta-btn {
+            display: inline-block; padding: 1rem 2.6rem; background: transparent;
+            border: 1px solid rgba(255,255,255,0.7); color: #fff; text-decoration: none;
+            font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase;
+            transition: background 0.3s, border-color 0.3s; position: relative;
+        }
+        .cta-btn:hover { background: rgba(255,255,255,0.12); border-color: #fff; }
+        #menu, #reservation, footer { position: relative; z-index: 1; background: #fff; }
+        footer { background: #1a1a1a; }
+        html.anim-on .reveal { opacity: 0; transform: translateY(36px); }
+    </style>
+</head>
+<body>
+
+    <div class="grain"></div>
+    <div class="fixed-bg"><div class="bg-overlay"></div><div class="vignette"></div></div>
+
+    <nav style="position:fixed;z-index:100;">
+        <div class="nav-container">
+            <a href="#home" class="logo"><span>Bistro Elegance</span></a>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#menu">Menu</a></li>
+                <li><a href="#reservation">Reservations</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <div class="menu-toggle"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Welcome to Bistro Elegance</h1>
+            <p>
+                <span class="text-option">Experience culinary excellence in an atmosphere of refined sophistication</span>
+                <span class="text-option">Discover exquisite flavors crafted with passion and precision</span>
+                <span class="text-option">Where fine dining meets unforgettable moments</span>
+            </p>
+            <a href="#reservation" class="cta-btn magnetic">Reserve Your Table</a>
+        </div>
+    </section>
+
+    <section id="menu">
+        <h2 class="reveal">Our Signature Menu</h2>
+        <div class="menu-grid">
+            <div class="menu-item reveal">
+                <img src="images/truffle-risotto.jpg" alt="Truffle Risotto" class="menu-item-image">
+                <div class="menu-item-content">
+                    <h3>Truffle Risotto</h3>
+                    <p>Creamy arborio rice with black truffle, parmesan, and fresh herbs</p>
+                    <div class="price">$32</div>
+                </div>
+            </div>
+            <div class="menu-item reveal">
+                <img src="images/grilled-salmon.jpg" alt="Grilled Salmon" class="menu-item-image">
+                <div class="menu-item-content">
+                    <h3>Grilled Salmon</h3>
+                    <p>Atlantic salmon with lemon butter sauce and seasonal vegetables</p>
+                    <div class="price">$28</div>
+                </div>
+            </div>
+            <div class="menu-item reveal">
+                <img src="images/beef-wellington.jpg" alt="Beef Wellington" class="menu-item-image">
+                <div class="menu-item-content">
+                    <h3>Beef Wellington</h3>
+                    <p>Premium beef tenderloin wrapped in puff pastry with mushroom duxelles</p>
+                    <div class="price">$45</div>
+                </div>
+            </div>
+            <div class="menu-item reveal">
+                <img src="images/lobster-thermidor.jpg" alt="Lobster Thermidor" class="menu-item-image">
+                <div class="menu-item-content">
+                    <h3>Lobster Thermidor</h3>
+                    <p>Fresh lobster in cognac cream sauce with gruyere cheese</p>
+                    <div class="price">$52</div>
+                </div>
+            </div>
+            <div class="menu-item reveal">
+                <img src="images/duck-confit.jpg" alt="Duck Confit" class="menu-item-image">
+                <div class="menu-item-content">
+                    <h3>Duck Confit</h3>
+                    <p>Slow-cooked duck leg with garlic potatoes and cherry reduction</p>
+                    <div class="price">$38</div>
+                </div>
+            </div>
+            <div class="menu-item reveal">
+                <img src="images/chocolate-souffle.jpg" alt="Chocolate Soufflé" class="menu-item-image">
+                <div class="menu-item-content">
+                    <h3>Chocolate Soufflé</h3>
+                    <p>Warm chocolate soufflé with vanilla ice cream and berry coulis</p>
+                    <div class="price">$16</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="reservation">
+        <div class="reservation">
+            <div class="reservation-left reveal">
+                <h2>Make a Reservation</h2>
+                <form class="reservation-form" onsubmit="handleReservation(event)">
+                    <div class="form-group"><label for="name">Full Name</label><input type="text" id="name" name="name" required></div>
+                    <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" required></div>
+                    <div class="form-group"><label for="phone">Phone Number</label><input type="tel" id="phone" name="phone" required></div>
+                    <div class="form-group"><label for="date">Date</label><input type="date" id="date" name="date" required></div>
+                    <div class="form-group">
+                        <label for="time">Time</label>
+                        <select id="time" name="time" required>
+                            <option value="">Select Time</option>
+                            <option value="17:00">5:00 PM</option><option value="17:30">5:30 PM</option>
+                            <option value="18:00">6:00 PM</option><option value="18:30">6:30 PM</option>
+                            <option value="19:00">7:00 PM</option><option value="19:30">7:30 PM</option>
+                            <option value="20:00">8:00 PM</option><option value="20:30">8:30 PM</option>
+                            <option value="21:00">9:00 PM</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="guests">Number of Guests</label>
+                        <select id="guests" name="guests" required>
+                            <option value="">Select Guests</option>
+                            <option value="1">1 Guest</option><option value="2">2 Guests</option>
+                            <option value="3">3 Guests</option><option value="4">4 Guests</option>
+                            <option value="5">5 Guests</option><option value="6">6 Guests</option>
+                            <option value="7">7 Guests</option><option value="8">8 Guests</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="special">Special Requests</label>
+                        <textarea id="special" name="special" rows="5" placeholder="Any dietary restrictions or special occasions?"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Reserve Table</button>
+                </form>
+            </div>
+            <div class="reservation-right reveal">
+                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop&crop=center" alt="Restaurant Interior" class="reservation-image">
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <p>King Abdullah II St<br>Amman, Jordan<br>Phone: +962 6 500 0000<br>Email: info@bistroelegance.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Opening Hours</h3>
+                <p>Monday - Thursday: 5:00 PM - 10:00 PM<br>Friday - Saturday: 5:00 PM - 11:00 PM<br>Sunday: 5:00 PM - 9:00 PM<br>Closed on major holidays</p>
+            </div>
+            <div class="footer-section">
+                <h3>Follow Us</h3>
+                <p><a href="#">Facebook</a><br><a href="#">Instagram</a><br><a href="#">Twitter</a><br><a href="#">LinkedIn</a></p>
+            </div>
+        </div>
+        <div style="margin-top:2rem;padding-top:2rem;border-top:1px solid #555;text-align:center;">
+            <p>Website by Prezance · prezance.co</p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a><span>|</span><a href="#">Terms &amp; Conditions</a><span>|</span><a href="#">Sitemap</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="ingredientsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">Dish Ingredients</h3>
+            <ul id="ingredientsList" class="ingredient-list"></ul>
+        </div>
+    </div>
+
+    <script src="tooplate-bistro-scripts.js"></script>
+
+    <script>
+    (function() {
+        var hasGSAP = typeof gsap !== 'undefined';
+        function showAllReveals() {
+            document.documentElement.classList.remove('anim-on');
+            document.querySelectorAll('.reveal').forEach(function(el) { el.style.opacity='1'; el.style.transform='none'; });
+        }
+        var lenis = null;
+        if (window.Lenis) {
+            try {
+                lenis = new Lenis({ duration: 1.2, easing: function(t){ return Math.min(1, 1.001 - Math.pow(2, -10*t)); } });
+                if (hasGSAP) { lenis.on('scroll', ScrollTrigger.update); gsap.ticker.add(function(time){ lenis.raf(time*1000); }); gsap.ticker.lagSmoothing(0); }
+                else { (function raf(time){ lenis.raf(time); requestAnimationFrame(raf); })(performance.now()); }
+            } catch(e) {}
+        }
+        if (!hasGSAP) { showAllReveals(); return; }
+        try {
+            gsap.registerPlugin(ScrollTrigger);
+            document.documentElement.classList.add('anim-on');
+            gsap.to('.fixed-bg', { backgroundPosition: '50% 60%', ease:'none', scrollTrigger: { trigger:'body', start:'top top', end:'bottom bottom', scrub:1.5 } });
+            gsap.utils.toArray('.reveal').forEach(function(el, i) {
+                gsap.to(el, { opacity:1, y:0, duration:0.85, ease:'power3.out', delay:(i%3)*0.1,
+                    scrollTrigger: { trigger:el, start:'top 88%', toggleActions:'play none none none' } });
+            });
+            var mag = document.querySelector('.magnetic');
+            if (mag) {
+                mag.addEventListener('mousemove', function(e) {
+                    var r = mag.getBoundingClientRect();
+                    gsap.to(mag, { x:(e.clientX-(r.left+r.width/2))*0.3, y:(e.clientY-(r.top+r.height/2))*0.3, duration:0.4, ease:'power2.out' });
+                });
+                mag.addEventListener('mouseleave', function() { gsap.to(mag, { x:0, y:0, duration:0.6, ease:'elastic.out(1,0.4)' }); });
+            }
+            window.addEventListener('load', function(){ ScrollTrigger.refresh(); });
+            ScrollTrigger.refresh();
+        } catch(err) { showAllReveals(); }
+    })();
+    </script>
+</body>
+</html>

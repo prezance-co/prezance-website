@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sama — Where every meal tells a story</title>
+<meta name="description" content="Sama. Modern Arabic fine dining — a tasting journey of memory, fire and spice. Reserve your table." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E0C09'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' fill='%23ffffff' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<style>
+  :root{
+    --night:#0E0C09; --night-2:#151209; --coal:#1C1812;
+    --sand:#E8DCC8; --sand-dim:#C9BBA2;
+    --mute:#8E8270; --line:#E8DCC822; --line-2:#E8DCC83a;
+    --ember:#C97B3D; --gold:#C8A968;
+    --serif:"Cormorant Garamond",Georgia,serif; --sans:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--night);color:var(--sand);font-size:15.5px;line-height:1.7;font-weight:300;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+  h1,h2,h3{font-family:var(--serif);font-weight:300;color:var(--sand)}
+  .caps{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);font-weight:400}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:12px;height:56px;padding:0 38px;border-radius:0;border:1px solid var(--line-2);color:var(--sand);font-size:12px;letter-spacing:.28em;text-transform:uppercase;font-weight:400;cursor:pointer;background:transparent;transition:background .35s,color .35s,border-color .35s;position:relative;overflow:hidden}
+  .btn::before{content:"";position:absolute;inset:0;background:var(--sand);transform:scaleX(0);transform-origin:left;transition:transform .45s cubic-bezier(.6,.05,.2,1);z-index:0}
+  .btn:hover::before{transform:scaleX(1)}
+  .btn span{position:relative;z-index:1;transition:color .35s}
+  .btn:hover span{color:var(--night)}
+  .btn.solid{background:var(--sand);color:var(--night);border-color:var(--sand)}
+  .btn.solid::before{background:var(--ember)}
+  .btn.solid span{color:var(--night)}
+  .btn.solid:hover span{color:#fff}
+  /* nav */
+  nav{position:fixed;inset:0 0 auto 0;z-index:100;transition:background .4s,backdrop-filter .4s,box-shadow .4s}
+  nav.on{background:rgba(14,12,9,.78);backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:92px}
+  .brand{display:flex;flex-direction:column;align-items:center;line-height:1}
+  .brand .ar{font-family:var(--serif);font-size:30px;letter-spacing:.08em}
+  .brand .en{font-size:9px;letter-spacing:.5em;text-transform:uppercase;color:var(--mute);margin-top:6px;padding-left:.5em}
+  nav .side{display:flex;align-items:center;gap:36px;font-size:11px;letter-spacing:.26em;text-transform:uppercase}
+  nav .side a{color:var(--sand-dim);transition:color .3s;position:relative}
+  nav .side a:hover{color:var(--sand)}
+  nav .side a::after{content:"";position:absolute;left:0;bottom:-8px;width:0;height:1px;background:var(--gold);transition:width .35s}
+  nav .side a:hover::after{width:100%}
+  @media(max-width:840px){nav .side a.hidem{display:none}}
+  /* hero */
+  .hero{position:relative;min-height:100svh;display:grid;place-items:center;text-align:center;overflow:hidden;
+    background:
+      radial-gradient(110% 70% at 50% 108%, #5A3215 0%, #2E1B0D 38%, transparent 72%),
+      radial-gradient(60% 45% at 50% 100%, #C97B3D2e 0%, transparent 70%),
+      linear-gradient(180deg,#0A0A10 0%, #141009 55%, #1D1407 100%)}
+  .hero .stars{position:absolute;inset:0;pointer-events:none}
+  .hero .stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#E8DCC8;opacity:.5;animation:tw 4s ease-in-out infinite alternate}
+  @keyframes tw{from{opacity:.45}to{opacity:.08}}
+  .hero .moon{position:absolute;top:14vh;right:16vw;width:110px;aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle at 36% 34%, #F4ECDC, #D8C8A6 55%, #B49F78);box-shadow:0 0 80px 18px #E8DCC81f;opacity:.85}
+  @media(max-width:700px){.hero .moon{width:72px;top:11vh;right:8vw}}
+  .hero .dunes{position:absolute;left:-5%;right:-5%;bottom:-2px;height:34vh;pointer-events:none}
+  .hero .dunes .d{position:absolute;left:0;right:0;bottom:0;border-radius:100% 100% 0 0}
+  .hero .dunes .d1{height:78%;background:linear-gradient(180deg,#241708,#150F06);transform:translateX(-12%) scaleX(1.6)}
+  .hero .dunes .d2{height:52%;background:linear-gradient(180deg,#2E1D0A,#180F05);transform:translateX(14%) scaleX(1.7)}
+  .hero .dunes .d3{height:30%;background:linear-gradient(180deg,#3A2410,#1A1006);transform:scaleX(2)}
+  .hero .inner{position:relative;z-index:2;padding:110px 24px 130px}
+  .hero .caps{display:block;margin-bottom:34px}
+  .hero h1{font-size:clamp(64px,12vw,168px);line-height:.95;letter-spacing:.14em;text-indent:.14em;font-weight:300}
+  .hero h1 .ln{display:block;overflow:hidden}
+  .hero h1 .ln span{display:inline-block;will-change:transform}
+  .hero .tg{margin-top:30px;font-family:var(--serif);font-size:clamp(19px,2.6vw,27px);font-style:italic;color:var(--sand-dim)}
+  .hero .cta{margin-top:48px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  .hero .scroll{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:10px;letter-spacing:.4em;text-transform:uppercase;color:var(--mute)}
+  .hero .scroll i{width:1px;height:44px;background:linear-gradient(var(--gold),transparent)}
+  /* shared band */
+  .band{padding:clamp(100px,13vw,170px) 0;position:relative}
+  .orn{display:flex;align-items:center;gap:18px;justify-content:center;margin-bottom:26px}
+  .orn::before,.orn::after{content:"";width:54px;height:1px;background:var(--line-2)}
+  .orn .dm{width:7px;height:7px;background:var(--gold);transform:rotate(45deg)}
+  /* story */
+  .story{background:var(--night)}
+  .story .head{text-align:center;max-width:680px;margin:0 auto}
+  .story h2{font-size:clamp(38px,5.4vw,68px);line-height:1.1;letter-spacing:.02em}
+  .story h2 em{font-style:italic;color:var(--gold)}
+  .story .lead{margin-top:28px;font-family:var(--serif);font-size:clamp(18px,2.2vw,23px);font-style:italic;color:var(--sand-dim);line-height:1.7}
+  .story .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:84px;align-items:end}
+  @media(max-width:860px){.story .cols{grid-template-columns:1fr}}
+  .panel{position:relative;border:1px solid var(--line);overflow:hidden;aspect-ratio:.78;display:flex;align-items:flex-end;padding:26px;isolation:isolate}
+  .panel .ph{position:absolute;inset:0;z-index:-1;transition:transform .8s cubic-bezier(.2,.8,.2,1);will-change:transform}
+  .panel:hover .ph{transform:scale(1.06)}
+  .panel.p1 .ph{background:
+     radial-gradient(70% 50% at 50% 28%, #D8893E55, transparent 70%),
+     radial-gradient(55% 40% at 50% 75%, #C97B3D33, transparent 70%),
+     linear-gradient(180deg,#211404,#150D04)}
+  .panel.p2 .ph{background:
+     radial-gradient(80% 55% at 50% 20%, #51616045, transparent 70%),
+     radial-gradient(45% 32% at 50% 72%, #C8A96833, transparent 72%),
+     linear-gradient(180deg,#101512,#0B0E0B)}
+  .panel.p3 .ph{background:
+     radial-gradient(75% 50% at 50% 25%, #8E3B2E4d, transparent 72%),
+     radial-gradient(50% 36% at 50% 78%, #C97B3D2e, transparent 70%),
+     linear-gradient(180deg,#1D0F0A,#120A06)}
+  .panel .dish{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);width:62%;aspect-ratio:1;border-radius:50%;z-index:-1;
+    background:radial-gradient(circle at 38% 32%, #2E2418, #191208 64%, #0E0A05 100%);
+    box-shadow:0 30px 50px -18px #000000d9, inset 0 1px 0 #E8DCC826}
+  .panel .dish::after{content:"";position:absolute;inset:17%;border-radius:50%;
+    background:radial-gradient(circle at 42% 36%, var(--c1,#D8893E), var(--c2,#7A3D14) 70%);
+    box-shadow:inset 0 4px 14px #00000080}
+  .panel.p2 .dish::after{--c1:#9DB48C;--c2:#3F5436}
+  .panel.p3 .dish::after{--c1:#C25438;--c2:#5E1F12}
+  .panel .cap .t{font-family:var(--serif);font-size:24px;letter-spacing:.04em}
+  .panel .cap .s{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--mute);margin-top:6px}
+  .panel.lift{margin-bottom:54px}
+  @media(max-width:860px){.panel.lift{margin-bottom:0}}
+  /* big statement divider */
+  .statement{padding:clamp(90px,11vw,150px) 0;background:linear-gradient(180deg,var(--night),#171107 50%,var(--night));text-align:center;border-block:1px solid var(--line)}
+  .statement p{font-family:var(--serif);font-size:clamp(26px,4.4vw,52px);line-height:1.32;font-style:italic;color:var(--sand);max-width:22ch;margin:0 auto}
+  .statement p em{color:var(--ember);font-style:italic}
+  /* menu */
+  .menu{background:var(--night)}
+  .menu .grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(44px,7vw,110px);align-items:start}
+  @media(max-width:900px){.menu .grid{grid-template-columns:1fr}}
+  .menu .intro{position:sticky;top:140px}
+  @media(max-width:900px){.menu .intro{position:static}}
+  .menu h2{font-size:clamp(38px,5vw,62px);line-height:1.08}
+  .menu h2 em{font-style:italic;color:var(--gold)}
+  .menu .intro p{margin-top:22px;color:var(--sand-dim);max-width:38ch}
+  .menu .intro .note{margin-top:30px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute)}
+  .mrow{padding:30px 4px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:6px 28px;transition:background .3s,padding .3s}
+  .mrow:last-child{border-bottom:1px solid var(--line)}
+  .mrow:hover{background:#E8DCC806;padding-left:14px}
+  .mrow .nm{font-family:var(--serif);font-size:clamp(21px,2.6vw,28px);letter-spacing:.03em;display:flex;align-items:baseline;gap:14px}
+  .mrow .nm .ar{font-size:.72em;color:var(--gold);opacity:.85}
+  .mrow .pr{font-family:var(--serif);font-size:21px;color:var(--gold);white-space:nowrap}
+  .mrow .ds{grid-column:1;color:var(--mute);font-size:14px;max-width:52ch}
+  .mrow .tagx{grid-column:1;margin-top:8px;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--ember)}
+  /* experience strip */
+  .exp{background:#171107;border-block:1px solid var(--line)}
+  .exp .row{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(28px,5vw,70px);text-align:center}
+  @media(max-width:760px){.exp .row{grid-template-columns:1fr}}
+  .exp .e .caps{display:block;margin-bottom:14px}
+  .exp .e .t{font-family:var(--serif);font-size:clamp(22px,2.6vw,30px);font-style:italic}
+  .exp .e p{margin-top:12px;color:var(--mute);font-size:14px;max-width:34ch;margin-inline:auto}
+  /* reservations */
+  .reserve{background:
+     radial-gradient(90% 80% at 50% 115%, #5A321533 0%, transparent 60%),
+     var(--night-2)}
+  .reserve .grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(44px,7vw,110px);align-items:center}
+  @media(max-width:900px){.reserve .grid{grid-template-columns:1fr}}
+  .reserve h2{font-size:clamp(38px,5vw,64px);line-height:1.08}
+  .reserve h2 em{font-style:italic;color:var(--gold)}
+  .reserve .blurb{margin-top:22px;color:var(--sand-dim);max-width:44ch}
+  .reserve .hours{margin-top:38px;border-top:1px solid var(--line)}
+  .reserve .hr{display:flex;justify-content:space-between;padding:16px 2px;border-bottom:1px solid var(--line);font-size:14px}
+  .reserve .hr .d{color:var(--mute);letter-spacing:.08em}
+  form .field{margin-bottom:18px}
+  form label{display:block;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--mute);margin-bottom:10px}
+  form input,form select{width:100%;height:56px;background:transparent;border:1px solid var(--line-2);color:var(--sand);padding:0 18px;font-family:var(--sans);font-size:15px;font-weight:300;transition:border-color .3s;border-radius:0}
+  form select option{background:var(--night);color:var(--sand)}
+  form input:focus,form select:focus{outline:none;border-color:var(--gold)}
+  form .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){form .row2{grid-template-columns:1fr}}
+  form .btn{width:100%;margin-top:10px}
+  /* contact + footer */
+  .contact{background:var(--night);border-top:1px solid var(--line)}
+  .contact .grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:clamp(36px,6vw,90px)}
+  @media(max-width:860px){.contact .grid{grid-template-columns:1fr}}
+  .contact h2{font-size:clamp(34px,4.6vw,58px);line-height:1.08;max-width:12ch}
+  .contact h2 em{font-style:italic;color:var(--gold)}
+  .contact h4{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;font-family:var(--sans);font-weight:400}
+  .contact p,.contact a.c{display:block;color:var(--sand-dim);font-size:15px;line-height:2}
+  .contact a.c:hover{color:var(--sand)}
+  footer{padding:36px 0;border-top:1px solid var(--line)}
+  footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+  /* reveals */
+  .rv{opacity:0;transform:translateY(46px);will-change:transform,opacity}
+  .parx{will-change:transform}
+  @media (prefers-reduced-motion: reduce){.rv{opacity:1!important;transform:none!important}.hero .stars i{animation:none}}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap">
+    <a class="side" href="#story" style="gap:0"><span class="hidem">The Story</span></a>
+    <a class="brand" href="#top">
+      <span class="ar">SAMA</span>
+      <span class="en">Fine Dining</span>
+    </a>
+    <div class="side">
+      <a class="hidem" href="#menu">Menu</a>
+      <a href="#reserve">Reserve</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="stars" id="stars"></div>
+  <div class="moon parx" data-speed="-18"></div>
+  <div class="dunes">
+    <div class="d d1 parx" data-speed="6"></div>
+    <div class="d d2 parx" data-speed="12"></div>
+    <div class="d d3 parx" data-speed="20"></div>
+  </div>
+  <div class="inner">
+    <span class="caps rv">Modern Arabic Fine Dining</span>
+    <h1><span class="ln"><span>SAMA</span></span></h1>
+    <p class="tg rv">Where every meal tells a story.</p>
+    <div class="cta rv">
+      <a class="btn solid" href="#reserve"><span>Reserve a table</span></a>
+      <a class="btn" href="#menu"><span>The menu</span></a>
+    </div>
+  </div>
+  <div class="scroll"><span>Begin</span><i></i></div>
+</header>
+
+<section class="band story" id="story">
+  <div class="wrap">
+    <div class="head">
+      <div class="orn rv"><span class="dm"></span></div>
+      <span class="caps rv" style="display:block;margin-bottom:24px">The Story</span>
+      <h2 class="rv">A table set between <em>memory</em> and the horizon.</h2>
+      <p class="lead rv">Sama began with the dishes of our grandmothers — slow, generous, perfumed with saffron and smoke — and asks one question: what do they become when given the precision of a fine kitchen?</p>
+    </div>
+    <div class="cols">
+      <div class="panel p1 lift rv parx" data-speed="-6">
+        <div class="ph"></div><div class="dish"></div>
+        <div class="cap"><div class="t">Fire</div><div class="s">Charcoal &amp; smoke</div></div>
+      </div>
+      <div class="panel p2 rv">
+        <div class="ph"></div><div class="dish"></div>
+        <div class="cap"><div class="t">Garden</div><div class="s">Herbs cut at dusk</div></div>
+      </div>
+      <div class="panel p3 lift rv parx" data-speed="6">
+        <div class="ph"></div><div class="dish"></div>
+        <div class="cap"><div class="t">Spice</div><div class="s">The old caravan routes</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="statement">
+  <div class="wrap">
+    <p class="rv">“We do not plate food. We plate the <em>evenings</em> we remember.”</p>
+    <div class="orn rv" style="margin-top:30px"><span class="dm"></span></div>
+  </div>
+</div>
+
+<section class="band menu" id="menu">
+  <div class="wrap">
+    <div class="grid">
+      <div class="intro">
+        <span class="caps rv" style="display:block;margin-bottom:22px">Menu Highlights</span>
+        <h2 class="rv">A journey in <em>seven acts.</em></h2>
+        <p class="rv">Our tasting menu moves like an evening — it opens cool and bright, deepens over fire, and closes sweet and slow. These are its signatures.</p>
+        <div class="note rv">Tasting menu · seven courses · 240 per guest</div>
+      </div>
+      <div class="list">
+        <div class="mrow rv">
+          <div class="nm">Smoked Freekeh, Quail <span class="ar">فريكة</span></div>
+          <div class="pr">52</div>
+          <p class="ds">Green wheat smoked over olive wood, roasted quail, preserved lemon and a broth poured at the table.</p>
+          <div class="tagx">Signature</div>
+        </div>
+        <div class="mrow rv">
+          <div class="nm">Sea Bass Sayadieh <span class="ar">صيادية</span></div>
+          <div class="pr">64</div>
+          <p class="ds">Caramelised onion rice, charred sea bass, pine nuts and a saffron-tahini emulsion.</p>
+        </div>
+        <div class="mrow rv">
+          <div class="nm">Short Rib Ouzi <span class="ar">أوزي</span></div>
+          <div class="pr">68</div>
+          <p class="ds">Twelve-hour short rib in warm spice, pistachio rice wrapped in pastry, smoked yoghurt.</p>
+          <div class="tagx">Guests' favourite</div>
+        </div>
+        <div class="mrow rv">
+          <div class="nm">Charred Aubergine Moutabal <span class="ar">متبل</span></div>
+          <div class="pr">34</div>
+          <p class="ds">Aubergine burnt to silk, cold-pressed tahini, pomegranate and za'atar oil.</p>
+        </div>
+        <div class="mrow rv">
+          <div class="nm">Knafeh, Reimagined <span class="ar">كنافة</span></div>
+          <div class="pr">38</div>
+          <p class="ds">Crisp kataifi, warm cheese heart, orange-blossom syrup and a whisper of sea salt.</p>
+          <div class="tagx">To finish</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band exp">
+  <div class="wrap">
+    <div class="row">
+      <div class="e rv">
+        <span class="caps">The Room</span>
+        <div class="t">Candlelight &amp; stone</div>
+        <p>Forty seats beneath hand-thrown clay lanterns. Quiet enough for conversation, alive enough for celebration.</p>
+      </div>
+      <div class="e rv">
+        <span class="caps">The Counter</span>
+        <div class="t">Eight seats at the fire</div>
+        <p>Watch the charcoal kitchen at arm's length, course by course, with the chefs narrating each act.</p>
+      </div>
+      <div class="e rv">
+        <span class="caps">The Cellar</span>
+        <div class="t">A private vault for twelve</div>
+        <p>One long table, one menu written for your evening alone, and a sommelier to walk you through it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band reserve" id="reserve">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <span class="caps rv" style="display:block;margin-bottom:22px">Reservations</span>
+        <h2 class="rv">An evening, <em>held</em> in your name.</h2>
+        <p class="blurb rv">Tables are released sixty days ahead and the counter seats go first. For parties of seven or more, write to us directly — we will plan the evening together.</p>
+        <div class="hours rv">
+          <div class="hr"><span class="d">Tuesday — Sunday</span><span>18:30 — 23:30</span></div>
+          <div class="hr"><span class="d">Counter seating</span><span>Two sittings · 19:00 &amp; 21:30</span></div>
+          <div class="hr"><span class="d">Monday</span><span>Closed — the kitchen rests</span></div>
+        </div>
+      </div>
+      <form class="rv" onsubmit="event.preventDefault(); this.querySelector('button span').textContent='Request received — we will confirm by evening';">
+        <div class="row2">
+          <div class="field"><label>Name</label><input type="text" placeholder="Your name" required /></div>
+          <div class="field"><label>Phone</label><input type="tel" placeholder="Your number" required /></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Guests</label>
+            <select><option>Two</option><option>Three</option><option>Four</option><option>Five</option><option>Six</option><option>Seven +</option></select>
+          </div>
+          <div class="field"><label>Seating</label>
+            <select><option>The Room</option><option>The Counter</option><option>The Cellar (private)</option></select>
+          </div>
+        </div>
+        <div class="field"><label>Preferred evening</label><input type="text" placeholder="e.g. the first Friday of next month" /></div>
+        <button class="btn solid" type="submit"><span>Request a table</span></button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="band contact" id="contact">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <div class="orn rv" style="justify-content:flex-start"><span class="dm"></span></div>
+        <h2 class="rv">Find your way <em>to us.</em></h2>
+      </div>
+      <div class="rv">
+        <h4>Speak to us</h4>
+        <a class="c" href="tel:+0005550199">+— 555 0199</a>
+        <a class="c" href="mailto:evenings@sama.example">evenings@sama.example</a>
+        <p>Reservations answered daily, noon to midnight.</p>
+      </div>
+      <div class="rv">
+        <h4>Visit</h4>
+        <p>Sama<br />The Old Granary, Rooftop Level<br />Valet at the courtyard entrance</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Sama — Modern Arabic Fine Dining</span>
+    <span>Where every meal tells a story</span>
+    <span>© 2026</span>
+  </div>
+</footer>
+
+<script>
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* Lenis smooth scroll — slow & cinematic */
+  let lenis = null;
+  if (window.Lenis && !reduced) {
+    lenis = new Lenis({ duration: 1.5, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(t => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (!t) return; e.preventDefault();
+      lenis ? lenis.scrollTo(t, { offset: -70 }) : t.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  /* nav surfaces */
+  const nav = document.getElementById('nav');
+  const navToggle = () => nav.classList.toggle('on', (lenis ? lenis.scroll : scrollY) > 40);
+  window.addEventListener('scroll', navToggle, { passive: true });
+  if (lenis) lenis.on('scroll', navToggle);
+
+  /* starfield */
+  const stars = document.getElementById('stars');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('i');
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.top = (Math.random() * 62) + '%';
+    s.style.animationDelay = (Math.random() * 4) + 's';
+    s.style.animationDuration = (3 + Math.random() * 4) + 's';
+    const sz = Math.random() < .85 ? 1.5 : 2.5;
+    s.style.width = s.style.height = sz + 'px';
+    stars.appendChild(s);
+  }
+
+  if (!reduced) {
+    /* hero entrance: title rises from mask, letterspacing settles */
+    gsap.timeline({ defaults: { ease: 'power4.out' } })
+      .from('.hero h1 .ln span', { yPercent: 115, duration: 1.5 }, .2)
+      .fromTo('.hero h1', { letterSpacing: '.34em' }, { letterSpacing: '.14em', duration: 2.2, ease: 'power2.out' }, .2)
+      .to('.hero .caps.rv', { opacity: 1, y: 0, duration: .9 }, .8)
+      .to('.hero .tg.rv', { opacity: 1, y: 0, duration: 1 }, 1.0)
+      .to('.hero .cta.rv', { opacity: 1, y: 0, duration: 1 }, 1.2);
+
+    /* dune + moon parallax */
+    gsap.utils.toArray('.parx').forEach(el => {
+      gsap.to(el, { yPercent: parseFloat(el.dataset.speed || 8), ease: 'none',
+        scrollTrigger: { trigger: el.closest('section, header'), start: 'top bottom', end: 'bottom top', scrub: true } });
+    });
+
+    /* reveals */
+    gsap.utils.toArray('section .rv, .statement .rv').forEach(el => {
+      gsap.to(el, { opacity: 1, y: 0, duration: 1.15, ease: 'power3.out',
+        scrollTrigger: { trigger: el, start: 'top 88%', once: true } });
+    });
+
+    /* menu rows: staggered slide-in as the list enters */
+    gsap.utils.toArray('.mrow').forEach((rw, i) => {
+      gsap.fromTo(rw, { x: 36 }, { x: 0, duration: 1, ease: 'power3.out',
+        scrollTrigger: { trigger: rw, start: 'top 90%', once: true } });
+    });
+
+    /* statement: slow zoom-in feel via scale */
+    gsap.fromTo('.statement p', { scale: .94 }, { scale: 1, ease: 'none',
+      scrollTrigger: { trigger: '.statement', start: 'top bottom', end: 'center center', scrub: true } });
+  } else {
+    document.querySelectorAll('.rv').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+  }
+</script>
+</body>
+</html>
