@@ -174,7 +174,7 @@
     position: relative;
     min-height: 100svh;
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* content sits in the upper third; PREZANCE watermark stays at the bottom */
     overflow: hidden;
   }
   .hero-fallback {
@@ -199,23 +199,6 @@
     from { opacity: var(--o, 0.5); }
     to { opacity: calc(var(--o, 0.5) * 0.2); }
   }
-  /* shooting star: thin streak, fades in/out as it travels top-right → bottom-left */
-  .shooting-star {
-    position: absolute;
-    width: 80px; height: 2px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95));
-    border-radius: 2px;
-    transform: rotate(35deg);
-    opacity: 0;
-    pointer-events: none;
-    will-change: transform, opacity;
-  }
-  @keyframes shoot {
-    0%   { opacity: 0; transform: translate(0, 0) rotate(35deg); }
-    15%  { opacity: 1; }
-    85%  { opacity: 1; }
-    100% { opacity: 0; transform: translate(var(--sx, -340px), var(--sy, 240px)) rotate(35deg); }
-  }
   .moonlight {
     position: absolute; inset: 0; z-index: 1;
     background:
@@ -239,7 +222,7 @@
     background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%);
     pointer-events: none;
   }
-  .hero .wrap { position: relative; z-index: 3; width: 100%; padding-top: 80px; padding-bottom: 80px; }
+  .hero .wrap { position: relative; z-index: 3; width: 100%; padding-top: 120px; padding-bottom: 80px; }
   .hero h1 {
     font-size: clamp(44px, 8.5vw, 104px);
     font-weight: 600;
@@ -247,8 +230,8 @@
     letter-spacing: -0.045em;
     max-width: 14ch;
     margin-bottom: 24px;
-    will-change: text-shadow;
   }
+  .hero h1 .hword { display: inline-block; will-change: transform, opacity; }
   .hero p.sub {
     font-size: clamp(17px, 2.4vw, 22px);
     color: rgba(255,255,255,0.72);
@@ -257,14 +240,6 @@
     margin-bottom: 40px;
   }
   .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
-  .scroll-hint {
-    position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
-    z-index: 2; font-family: var(--mono); font-size: 11px; color: var(--mute);
-    letter-spacing: 0.1em; text-transform: uppercase; display: flex; flex-direction: column;
-    align-items: center; gap: 8px;
-  }
-  .scroll-hint .line { width: 1px; height: 36px; background: linear-gradient(var(--mute), transparent); animation: pulse 2s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
 
   /* ─────────────────────────  Section frame  ───────────────────────── */
   section { position: relative; }
@@ -309,11 +284,6 @@
   .cell .desc { color: var(--mute); font-size: 15px; line-height: 1.5; margin-top: 12px; max-width: 36ch; }
   .cell .price { font-family: var(--mono); font-size: 13px; color: var(--white); margin-top: 18px; }
   .cell .price span { color: var(--mute); }
-  .cell .big-mark {
-    position: absolute; right: -10px; bottom: -30px;
-    font-size: 180px; font-weight: 600; line-height: 1; color: rgba(255,255,255,0.025);
-    letter-spacing: -0.05em; pointer-events: none; user-select: none;
-  }
   .cell.website  { grid-column: span 6; grid-row: span 2; }
   .cell.website .ttl { font-size: clamp(40px, 5vw, 64px); }
   .cell.website .desc { font-size: 17px; max-width: 40ch; }
@@ -653,8 +623,7 @@
   .reveal.d2 { transition-delay: 0.16s; }
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
-    .scroll-hint .line, .star { animation: none; }
-    .shooting-star { display: none; }
+    .star { animation: none; }
   }
 </style>
 </head>
@@ -688,10 +657,6 @@
       <a href="#contact" class="btn btn-secondary cta-button">Get started</a>
     </div>
   </div>
-  <div class="scroll-hint">
-    <span>Scroll</span>
-    <span class="line"></span>
-  </div>
 </header>
 
 <!-- ───────────────  BENTO — SERVICES  ─────────────── -->
@@ -711,7 +676,6 @@
           <p class="desc">A fast, conversion-ready site built on a hand-picked template and tailored to your brand. Hosting, domain and SEO basics included.</p>
         </div>
         <div class="price">From $250 <span>· 3 tiers</span></div>
-        <span class="big-mark">W</span>
       </article>
 
       <article class="cell mobile reveal d1">
@@ -720,7 +684,6 @@
           <p class="desc">Native-feel iOS &amp; Android apps for booking, ordering and client portals.</p>
         </div>
         <div class="price">From $1,500</div>
-        <span class="big-mark">M</span>
       </article>
 
       <article class="cell chatbot reveal d2">
@@ -745,7 +708,6 @@
           <p class="desc">QR-ready menus that update in seconds — no reprints, no waiting.</p>
         </div>
         <div class="price">$150</div>
-        <span class="big-mark">D</span>
       </article>
 
       <article class="cell seo reveal d1">
@@ -754,7 +716,6 @@
           <p class="desc">Business Profile setup and search foundations.</p>
         </div>
         <div class="price">$100</div>
-        <span class="big-mark">G</span>
       </article>
     </div>
   </div>
@@ -1043,7 +1004,7 @@
     });
   });
 
-  /* ───── FIX 3 — starfield + moonlight (stars built in JS, twinkle via CSS) ───── */
+  /* ───── Starfield (stars built in JS, twinkle via CSS) ───── */
   const starfield = document.querySelector(".starfield");
   if (starfield) {
     const frag = document.createDocumentFragment();
@@ -1063,26 +1024,6 @@
       frag.appendChild(s);
     }
     starfield.appendChild(frag);
-
-    /* shooting stars: max one at a time, every 4–8s, top-right → bottom-left */
-    if (!reduced) {
-      let shootTimer;
-      const launchShootingStar = () => {
-        const star = document.createElement("span");
-        star.className = "shooting-star";
-        // start somewhere along the top-right region
-        star.style.left = (55 + Math.random() * 40).toFixed(1) + "%";
-        star.style.top = (-5 + Math.random() * 30).toFixed(1) + "%";
-        // travel down-left, matching the 35° streak angle
-        star.style.setProperty("--sx", "-" + (260 + Math.random() * 160).toFixed(0) + "px");
-        star.style.setProperty("--sy", (180 + Math.random() * 140).toFixed(0) + "px");
-        star.style.animation = "shoot 1.2s ease-in forwards";
-        star.addEventListener("animationend", () => star.remove());
-        starfield.appendChild(star);
-        shootTimer = setTimeout(launchShootingStar, 4000 + Math.random() * 4000);
-      };
-      shootTimer = setTimeout(launchShootingStar, 2000 + Math.random() * 3000);
-    }
   }
 
   /* ───── Section fade-ups + inner reveals + process slide-ins ───── */
@@ -1129,7 +1070,7 @@
     });
   }
 
-  /* ───── FIX 2 — Three.js particle text, right half of hero only ───── */
+  /* ───── Three.js PREZANCE particle watermark (full-width canvas, bottom-left text) ───── */
   const heroEl = document.querySelector(".hero");
   const pCanvas = document.getElementById("particle-canvas");
   function initParticles() {
@@ -1144,23 +1085,35 @@
     }
     const COUNT = isTouch ? 3500 : 8000;
     const scene = new THREE.Scene();
-    let W = pCanvas.clientWidth, H = pCanvas.clientHeight; // canvas = right half of hero
+    let W = pCanvas.clientWidth, H = pCanvas.clientHeight; // canvas spans the full hero
     const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0.1, 10);
     camera.position.z = 1;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H, false);
 
-    // sample "PREZANCE" pixels from an offscreen 2D canvas — large dim watermark, bottom-left
+    // sample "PREZANCE" pixels from an offscreen 2D canvas — large dim watermark,
+    // bottom-left. Layout-aware: always sits ≥120px below the CTA buttons so the
+    // headline never overlaps it (shrinks gracefully on short viewports).
     function sampleText() {
       const off = document.createElement("canvas");
       off.width = W; off.height = H;
       const ctx = off.getContext("2d");
-      const fs = Math.min(W / 5.2, 220); // dramatic watermark scale
+      const GAP = 120;          // min clear space between buttons and PREZANCE
+      const capRatio = 0.72;    // cap height as a fraction of font size
+      const heroRect = heroEl.getBoundingClientRect();
+      const cta = heroEl.querySelector(".hero-cta");
+      const ctaBottom = cta ? (cta.getBoundingClientRect().bottom - heroRect.top) : H * 0.45;
+      const bottomMargin = H * 0.05;                       // keep off the very bottom edge
+      const avail = H - bottomMargin - (ctaBottom + GAP);  // vertical room for the watermark band
+      const fs = Math.min(W / 5.2, 220, avail / capRatio);
+      if (fs < 48) return [];                              // too short to read as a watermark — skip cleanly
+      const capTop = ctaBottom + GAP;                      // top of the letters
+      const baselineY = capTop + fs * capRatio;            // alphabetic baseline
       ctx.fillStyle = "#fff";
       ctx.font = `700 ${fs}px Inter, system-ui, sans-serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
-      ctx.fillText("PREZANCE", W * 0.03, H * 0.92);
+      ctx.fillText("PREZANCE", W * 0.03, baselineY);
       const data = ctx.getImageData(0, 0, W, H).data;
       const pts = [];
       const step = 2;
@@ -1194,7 +1147,7 @@
       positions[i * 3 + 1] = scatter[i * 2 + 1];
       positions[i * 3 + 2] = 0;
       phase[i] = Math.random() * Math.PI * 2;
-      const b = 0x88 / 255; // grey #888888 watermark
+      const b = 0xaa / 255; // grey #aaaaaa watermark
       colors[i * 3] = b; colors[i * 3 + 1] = b; colors[i * 3 + 2] = b;
     }
     assignTargets();
@@ -1207,7 +1160,7 @@
       sizeAttenuation: false,
       vertexColors: true,
       transparent: true,
-      opacity: 0.28, // grey watermark — headline (z3) reads on top
+      opacity: 0.45, // grey watermark — headline (z3) reads on top
       depthTest: false,
       blending: THREE.AdditiveBlending
     });
@@ -1273,23 +1226,21 @@
     });
   }
 
-  /* Chromatic aberration on the hero headline (lerped) */
-  const h1 = document.getElementById("hero-headline");
-  if (!isTouch && !reduced && h1) {
-    let target = 0, current = 0, active = false;
-    heroEl.addEventListener("pointermove", (e) => {
-      target = e.clientX - window.innerWidth / 2;
-      active = true;
-    }, { passive: true });
-    heroEl.addEventListener("pointerleave", () => { target = 0; });
-    (function chroma() {
-      requestAnimationFrame(chroma);
-      if (!active) return;
-      current += (target - current) * 0.08;
-      const o = current * 0.05;
-      h1.style.textShadow = `${o}px 0 0 rgba(255,0,0,0.4), ${-o}px 0 0 rgba(0,255,255,0.4)`;
-      if (Math.abs(current) < 0.05 && target === 0) { h1.style.textShadow = "none"; active = false; }
-    })();
+  /* Clean headline entrance: words fade in + slide up on load (no chromatic split) */
+  function animateHeadline() {
+    const h1 = document.getElementById("hero-headline");
+    if (!h1) return;
+    if (reduced || !hasGSAP || !window.SplitText) return; // headline stays visible as-is
+    try {
+      const split = new SplitText(h1, { type: "words", wordsClass: "hword" });
+      gsap.from(split.words, {
+        opacity: 0,
+        y: 30,
+        duration: 0.8,
+        ease: "power2.out",
+        stagger: 0.15
+      });
+    } catch (e) { /* SplitText failed — headline stays visible un-split */ }
   }
 
   /* ───── Cursor spotlight / text swap / magnetic (kept per FIX 4) ───── */
@@ -1309,9 +1260,7 @@
       pulled: false
     }));
 
-    let spotLogged = false;
     window.addEventListener("mousemove", (e) => {
-      if (!spotLogged) { console.log("[spotlight] mousemove handler active — background updating"); spotLogged = true; }
       spot.style.background = `radial-gradient(circle 300px at ${e.clientX}px ${e.clientY}px, rgba(255,255,255,0.08), transparent)`;
       spot.classList.add("on");
 
@@ -1373,6 +1322,7 @@
   /* boot non-carousel pieces after fonts */
   function boot() {
     splitHeadings();
+    animateHeadline();
     initParticles();
   }
   if (document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(boot);
