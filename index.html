@@ -19,9 +19,6 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollToPlugin.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
 
-<!-- imagesLoaded (Codrops carousel preload dependency) -->
-<script src="https://unpkg.com/imagesloaded@5.0.0/imagesloaded.pkgd.min.js"></script>
-
 <!-- Lenis smooth scroll -->
 <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
 
@@ -341,19 +338,38 @@
     text-transform: uppercase;
     color: var(--white);
   }
-  .scene__title a { display: block; cursor: pointer; }
   .scene__title span { display: inline-block; }
-  .scene__title .char {
-    display: inline-block;
-    transform-style: preserve-3d;
-    transform-origin: 50% 0%;
-  }
   .scene__hint {
     position: absolute;
     bottom: 10vh; left: 50%; transform: translateX(-50%);
     font-family: var(--mono); font-size: 11px; color: var(--label);
     letter-spacing: 0.1em; text-transform: uppercase; z-index: 10;
   }
+
+  /* Category filter pills */
+  .template-filters {
+    position: absolute;
+    top: 88px; left: 0; right: 0;
+    z-index: 20;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+    padding: 0 var(--gutter);
+  }
+  .filter-pill {
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 11px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--mute);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  .filter-pill:hover { color: var(--white); border-color: #555; }
+  .filter-pill.active { background: var(--white); color: var(--black); border-color: var(--white); }
+
   .carousel {
     width: 400px;
     height: 500px;
@@ -406,103 +422,28 @@
     padding: 18px;
     background: linear-gradient(transparent, rgba(0,0,0,0.85));
   }
-  .card__label .name { font-family: var(--sans); font-weight: 600; letter-spacing: -0.02em; font-size: 18px; color: var(--white); text-transform: none; }
-  .card__label .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; }
+  .card__label .name { font-family: var(--sans); font-weight: 700; letter-spacing: -0.02em; font-size: 18px; color: var(--white); text-transform: none; }
+  .card__label .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+  /* Explore button — appears on card hover */
+  .card__explore {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    z-index: 3;
+    font-family: var(--sans); font-size: 14px; font-weight: 500;
+    background: var(--white); color: var(--black);
+    border: none; border-radius: 100px;
+    padding: 11px 22px; cursor: pointer;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+    white-space: nowrap;
+  }
+  .card:hover .card__explore { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
   @media (max-width: 560px) {
     .carousel { width: 260px; height: 340px; margin: -170px 0 0 -130px; transform: translateZ(-300px) rotateY(0deg); }
     .carousel__cell { width: 230px; height: 290px; }
-  }
-
-  .preview-wrapper { position: relative; z-index: 500; }
-  .preview {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    padding: 0 10vw;
-    display: grid;
-    align-content: center;
-    justify-items: center;
-    grid-row-gap: 1rem;
-    opacity: 0;
-    pointer-events: none;
-    background: var(--black); /* page content sits behind the fixed preview */
-  }
-  .preview__header {
-    display: flex;
-    width: 100%;
-    align-items: flex-end;
-    justify-content: space-between;
-    line-height: 1;
-  }
-  .preview__title {
-    margin: 0;
-    font-family: var(--mono);
-    font-weight: 400;
-    font-size: clamp(15px, 2.2vw, 24px);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--white);
-  }
-  .preview__title .char, .preview__close .char { display: inline-block; }
-  .preview__close {
-    background: none;
-    text-transform: uppercase;
-    border: 0;
-    padding: 0;
-    margin: 0;
-    font-family: var(--mono);
-    font-size: 13px;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    color: var(--mute);
-  }
-  .preview__close:hover, .preview__close:focus { outline: none; color: var(--white); }
-  .grid {
-    padding: 1rem 0;
-    display: grid;
-    grid-template-columns: repeat(var(--column-count, 2), minmax(80px, 1fr));
-    grid-column-gap: 1.5rem;
-    grid-row-gap: 1.5rem;
-    width: 100%;
-    perspective: 900px;
-  }
-  .grid__item {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    will-change: transform, clip-path;
-    overflow: hidden;
-    border-radius: var(--border-radius);
-    position: relative;
-    transform-style: preserve-3d;
-  }
-  .grid__item-image {
-    width: 100%;
-    aspect-ratio: 4/5;
-    background-size: 100%;
-    background-position: 50% 50%;
-    border: 1px solid var(--border);
-    border-radius: var(--border-radius);
-    transition: opacity 0.15s cubic-bezier(0.2, 0, 0.2, 1);
-  }
-  .grid__item:hover .grid__item-image { opacity: 0.7; }
-  .grid__item-caption h3 {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    margin: 6px 0 0;
-    color: var(--white);
-  }
-  .grid__item-caption .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; }
-  @media screen and (min-width: 65em) {
-    .grid { --column-count: 6; }
-  }
-  @media screen and (max-width: 64.99em) {
-    .grid { --column-count: 3; }
+    .template-filters { top: 76px; gap: 8px; }
+    .filter-pill { padding: 5px 12px; font-size: 10px; }
   }
 
   /* ─────────────────────────  Process — no numbers, slide-in rows  ───────────────────────── */
@@ -721,105 +662,28 @@
   </div>
 </section>
 
-<!-- ═══════════  TEMPLATE GALLERY — CODROPS 3D CAROUSEL  ═══════════ -->
+<!-- ═══════════  TEMPLATE GALLERY — 3D RING CAROUSEL + CATEGORY FILTERS  ═══════════ -->
 <section class="section carousel-band" id="templates">
+  <div class="template-filters" id="template-filters" role="tablist" aria-label="Filter templates by category">
+    <button class="filter-pill active" type="button" data-filter="all" aria-selected="true">All</button>
+    <button class="filter-pill" type="button" data-filter="medical" aria-selected="false">Medical</button>
+    <button class="filter-pill" type="button" data-filter="restaurant" aria-selected="false">Restaurant</button>
+    <button class="filter-pill" type="button" data-filter="law" aria-selected="false">Law</button>
+    <button class="filter-pill" type="button" data-filter="business" aria-selected="false">Business</button>
+    <button class="filter-pill" type="button" data-filter="app" aria-selected="false">App</button>
+    <button class="filter-pill" type="button" data-filter="saas" aria-selected="false">SaaS</button>
+  </div>
   <div class="scene-wrapper">
     <div class="scene" data-radius="650">
-      <h2 class="scene__title" data-speed="0.7">
-        <a href="#preview-1"><span>Choose your design</span></a>
-      </h2>
+      <h2 class="scene__title"><span>Choose your design</span></h2>
       <div class="carousel">
-        <div class="carousel__drag">
-        <div class="carousel__cell">
-          <div class="card template-card" style="--img: linear-gradient(150deg, #0b1f3a, #1a4a7a)">
-            <div class="card__face card__face--front"><div class="card__label"><div class="name">Novena</div><div class="cat">Clinical Authority</div></div></div>
-            <div class="card__face card__face--back"><div class="card__label"><div class="name">Novena</div><div class="cat">Clinical Authority</div></div></div>
-          </div>
-        </div>
-        <div class="carousel__cell">
-          <div class="card template-card" style="--img: linear-gradient(150deg, #2a1810, #7a4a2a)">
-            <div class="card__face card__face--front"><div class="card__label"><div class="name">Medic</div><div class="cat">Warm &amp; Elegant</div></div></div>
-            <div class="card__face card__face--back"><div class="card__label"><div class="name">Medic</div><div class="cat">Warm &amp; Elegant</div></div></div>
-          </div>
-        </div>
-        <div class="carousel__cell">
-          <div class="card template-card" style="--img: linear-gradient(150deg, #0a1a18, #1a6a5a)">
-            <div class="card__face card__face--front"><div class="card__label"><div class="name">MediLab</div><div class="cat">Modern Minimal</div></div></div>
-            <div class="card__face card__face--back"><div class="card__label"><div class="name">MediLab</div><div class="cat">Modern Minimal</div></div></div>
-          </div>
-        </div>
-        <div class="carousel__cell">
-          <div class="card template-card" style="--img: linear-gradient(150deg, #2a1014, #7a2a3a)">
-            <div class="card__face card__face--front"><div class="card__label"><div class="name">Savor</div><div class="cat">Restaurant</div></div></div>
-            <div class="card__face card__face--back"><div class="card__label"><div class="name">Savor</div><div class="cat">Restaurant</div></div></div>
-          </div>
-        </div>
-        <div class="carousel__cell">
-          <div class="card template-card" style="--img: linear-gradient(150deg, #101a0a, #3a6a1a)">
-            <div class="card__face card__face--front"><div class="card__label"><div class="name">Vital</div><div class="cat">Fitness</div></div></div>
-            <div class="card__face card__face--back"><div class="card__label"><div class="name">Vital</div><div class="cat">Fitness</div></div></div>
-          </div>
-        </div>
-        <div class="carousel__cell">
-          <div class="card template-card" style="--img: linear-gradient(150deg, #1a1a22, #3a3a5a)">
-            <div class="card__face card__face--front"><div class="card__label"><div class="name">Lex</div><div class="cat">Legal</div></div></div>
-            <div class="card__face card__face--back"><div class="card__label"><div class="name">Lex</div><div class="cat">Legal</div></div></div>
-          </div>
-        </div>
-        </div>
+        <div class="carousel__drag" id="carousel-drag"><!-- cards injected by JS from the manifest --></div>
       </div>
-      <div class="scene__hint">Drag or scroll to rotate · click title to browse</div>
+      <div class="scene__hint">Drag or scroll to rotate · hover a card to explore</div>
     </div>
   </div>
   <!-- / scene-wrapper -->
 </section>
-
-<div class="preview-wrapper">
-  <div class="preview" id="preview-1">
-    <header class="preview__header">
-      <h2 class="preview__title"><span>Choose your design</span></h2>
-      <button class="preview__close">Close ×</button>
-    </header>
-    <div class="grid">
-      <figure aria-labelledby="caption1" class="grid__item" role="img">
-        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #0b1f3a, #1a4a7a)"></div>
-        <figcaption class="grid__item-caption" id="caption1">
-          <h3>Novena</h3><div class="cat">Clinical Authority</div>
-        </figcaption>
-      </figure>
-      <figure aria-labelledby="caption2" class="grid__item" role="img">
-        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #2a1810, #7a4a2a)"></div>
-        <figcaption class="grid__item-caption" id="caption2">
-          <h3>Medic</h3><div class="cat">Warm &amp; Elegant</div>
-        </figcaption>
-      </figure>
-      <figure aria-labelledby="caption3" class="grid__item" role="img">
-        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #0a1a18, #1a6a5a)"></div>
-        <figcaption class="grid__item-caption" id="caption3">
-          <h3>MediLab</h3><div class="cat">Modern Minimal</div>
-        </figcaption>
-      </figure>
-      <figure aria-labelledby="caption4" class="grid__item" role="img">
-        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #2a1014, #7a2a3a)"></div>
-        <figcaption class="grid__item-caption" id="caption4">
-          <h3>Savor</h3><div class="cat">Restaurant</div>
-        </figcaption>
-      </figure>
-      <figure aria-labelledby="caption5" class="grid__item" role="img">
-        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #101a0a, #3a6a1a)"></div>
-        <figcaption class="grid__item-caption" id="caption5">
-          <h3>Vital</h3><div class="cat">Fitness</div>
-        </figcaption>
-      </figure>
-      <figure aria-labelledby="caption6" class="grid__item" role="img">
-        <div class="grid__item-image" style="background-image: linear-gradient(150deg, #1a1a22, #3a3a5a)"></div>
-        <figcaption class="grid__item-caption" id="caption6">
-          <h3>Lex</h3><div class="cat">Legal</div>
-        </figcaption>
-      </figure>
-    </div>
-  </div>
-</div>
 
 <!-- ───────────────  HOW IT WORKS — NO NUMBERS  ─────────────── -->
 <section class="band section" id="process">
@@ -1330,524 +1194,170 @@
 })();
 </script>
 
-<!-- ═════════ CODROPS 3DCarousel — js/index.js verbatim, with documented adaptations:
-     1. ScrollSmoother → Lenis bridge (`smoother.paused` maps to lenis.stop/start);
-        ScrollSmoother.create removed because the page already smooth-scrolls with Lenis.
-     2. preloadImages (js/utils.js) inlined — module imports need no build step this way.
-     3. Cards use CSS gradients via the same `--img` custom property instead of webp files. ═════════ -->
+<!-- ═════════ Template gallery — data-driven 3D ring carousel + category filters ═════════ -->
 <script>
 (() => {
-  if (!(window.gsap && window.ScrollTrigger && window.SplitText && window.ScrollToPlugin)) return; // CDN failed: cards still render via setup below if possible
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const drag = document.getElementById('carousel-drag');
+  if (!drag) return;
+  const carousel = drag.closest('.carousel');
+  const scene = drag.closest('.scene');
+  const filtersBar = document.getElementById('template-filters');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hasGSAP = !!(window.gsap && window.ScrollTrigger);
 
-  // Inlined from js/utils.js — resolves when background images are loaded
-  const preloadImages = (selector = 'img') => {
-    return new Promise((resolve) => {
-      if (!window.imagesLoaded) { resolve(); return; }
-      imagesLoaded(document.querySelectorAll(selector), { background: true }, resolve);
-    });
+  // Template manifest — label · category · path · gradient colours (a → b)
+  const MANIFEST = [
+    { label: 'Clinical Authority', category: 'medical',    path: 'templates/novena/theme/index.html',   a: '#0b1f3a', b: '#1a4a7a' },
+    { label: 'Warm & Elegant',     category: 'medical',    path: 'templates/medic/index.html',           a: '#2a1810', b: '#7a4a2a' },
+    { label: 'Modern Minimal',     category: 'medical',    path: 'templates/medilab/index.html',         a: '#0a1a18', b: '#1a6a5a' },
+    { label: 'Dark Premium',       category: 'medical',    path: 'templates/medicio/index.html',         a: '#141420', b: '#3a3450' },
+    { label: 'Soft & Caring',      category: 'medical',    path: 'templates/klinik/index.html',          a: '#122a2e', b: '#2a7a78' },
+    { label: 'Yummy',              category: 'restaurant', path: 'templates/yummy/index.html',           a: '#2a1014', b: '#7a2a3a' },
+    { label: 'Restaurantly',       category: 'restaurant', path: 'templates/restaurantly/index.html',    a: '#2a1a08', b: '#7a5a1a' },
+    { label: 'Feane',              category: 'restaurant', path: 'templates/feane/index.html',           a: '#2a0e10', b: '#6a1a22' },
+    { label: 'Law',                category: 'law',        path: 'templates/law/index.html',             a: '#0c1424', b: '#25324f' },
+    { label: 'Lawyer',             category: 'law',        path: 'templates/lawyer/index.html',          a: '#1a1a22', b: '#3a3a5a' },
+    { label: 'Law Firm',           category: 'law',        path: 'templates/lawfirm/index.html',         a: '#10131c', b: '#2c3550' },
+    { label: 'Megakit',            category: 'business',   path: 'templates/megakit/theme/index.html',   a: '#1a1208', b: '#5a4218' },
+    { label: 'Promodise',          category: 'business',   path: 'templates/promodise/theme/index.html', a: '#14181f', b: '#34465a' },
+    { label: 'App Plus',           category: 'app',        path: 'templates/appplus/index.html',         a: '#0a1424', b: '#1a4a8a' },
+    { label: 'Small Apps',         category: 'app',        path: 'templates/smallapps/theme/index.html', a: '#1a0e24', b: '#5a2a7a' },
+    { label: 'Advanced',           category: 'saas',       path: 'templates/advanced/index.html',        a: '#0a1a1a', b: '#1a5a5a' },
+    { label: 'Avo',                category: 'saas',       path: 'templates/avo/index.html',             a: '#0e1a0a', b: '#3a6a1a' }
+  ];
+  const CAT_LABEL = { medical: 'Medical', restaurant: 'Restaurant', law: 'Law', business: 'Business', app: 'App', saas: 'SaaS' };
+
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const cardHTML = (t) => {
+    const label = esc(t.label), cat = esc(CAT_LABEL[t.category] || t.category);
+    const lbl = `<div class="card__label"><div class="name">${label}</div><div class="cat">${cat}</div></div>`;
+    return `<div class="carousel__cell">
+      <div class="card template-card" style="--img: linear-gradient(150deg, ${t.a}, ${t.b})">
+        <div class="card__face card__face--front">
+          <button class="card__explore" type="button" data-explore="${esc(t.path)}">Explore →</button>
+          ${lbl}
+        </div>
+        <div class="card__face card__face--back">${lbl}</div>
+      </div>
+    </div>`;
   };
 
-  // Adaptation 1: the page smooth-scrolls with Lenis (see main script), so ScrollSmoother
-  // is not created. The `smoother` API surface used below is bridged to Lenis.
-  const smoother = {
-    paused(p) {
-      const l = window.__lenis;
-      if (!l) return;
-      p ? l.stop() : l.start();
-    }
-  };
+  const isNarrow = () => window.matchMedia('(max-width: 560px)').matches;
+  function radiusFor(n) {
+    const cardW = isNarrow() ? 230 : 350;
+    const gap = isNarrow() ? 26 : 48;
+    const minR = isNarrow() ? 300 : 440;
+    if (n <= 1) return minR;
+    return Math.max(minR, Math.round((cardW / 2 + gap) / Math.tan(Math.PI / n)));
+  }
 
-  // Reference to the container that wraps all the 3D scene elements
-  const sceneWrapper = document.querySelector('.scene-wrapper');
+  let cells = [];
+  let dragRot = 0;
+  let tl = null;
 
-  // Global flag to prevent multiple animations from overlapping or triggering at once
-  let isAnimating = false;
+  function setRot(el, deg) {
+    if (hasGSAP) gsap.set(el, { rotationY: deg });
+    else el.style.transform = `rotateY(${deg}deg)`;
+  }
 
-  // A Map to store SplitText instances keyed by DOM elements (used for animating text characters)
-  const splitMap = new Map();
-
-  const getCarouselCellTransforms = (count, radius) => {
-    const angleStep = 360 / count; // Divide 360° by number of cells to get angle step
-    return Array.from({ length: count }, (_, i) => {
-      const angle = i * angleStep;
-      return `rotateY(${angle}deg) translateZ(${radius}px)`; // 3D rotation + translation
-    });
-  };
-
-  const setupCarouselCells = (carousel) => {
-    const wrapper = carousel.closest('.scene');
-    const radius = parseFloat(wrapper.dataset.radius) || 500; // Read radius from data attribute or default to 500
-    const cells = carousel.querySelectorAll('.carousel__cell');
-
-    const transforms = getCarouselCellTransforms(cells.length, radius); // Get transform strings
+  function layout() {
+    const n = cells.length;
+    if (!n) return;
+    const radius = radiusFor(n);
+    const step = 360 / n;
     cells.forEach((cell, i) => {
-      cell.style.transform = transforms[i]; // Apply transform to each cell
+      cell.style.transform = `rotateY(${i * step}deg) translateZ(${radius}px)`;
     });
-  };
+    // base depth so the front-facing card sits near the camera plane
+    const baseZ = -(radius - 40);
+    if (hasGSAP) gsap.set(carousel, { z: baseZ, rotationX: 0, rotationY: 0, rotationZ: 0 });
+    else carousel.style.transform = `translateZ(${baseZ}px) rotateY(0deg)`;
+    dragRot = 0;
+    setRot(drag, 0);
+  }
 
-  const createScrollAnimation = (carousel) => {
-    const wrapper = carousel.closest('.scene');
-    const cards = carousel.querySelectorAll('.card');
-    const titleSpan = wrapper.querySelector('.scene__title span');
-    const split = splitMap.get(titleSpan);
-    const chars = split?.chars || [];
-
-    // Create scroll-driven timeline
-    carousel._timeline = gsap.timeline({
+  function buildTimeline() {
+    if (tl) { if (tl.scrollTrigger) tl.scrollTrigger.kill(); tl.kill(); tl = null; }
+    if (!hasGSAP || reduced) return;
+    const cardEls = drag.querySelectorAll('.card');
+    tl = gsap.timeline({
       defaults: { ease: 'sine.inOut' },
-      scrollTrigger: {
-        trigger: wrapper,
-        start: 'top bottom', // Start when top of wrapper hits bottom of viewport
-        end: 'bottom top', // End when bottom of wrapper hits top of viewport
-        scrub: true, // Smooth animation based on scroll position
-      },
+      scrollTrigger: { trigger: '#templates', start: 'top bottom', end: 'bottom top', scrub: true }
     });
+    tl.fromTo(carousel, { rotationY: 0 }, { rotationY: -180 }, 0)
+      .fromTo(carousel, { rotationZ: 3, rotationX: 3 }, { rotationZ: -3, rotationX: -3 }, 0)
+      .fromTo(cardEls, { filter: 'brightness(250%)' }, { filter: 'brightness(80%)', ease: 'power3' }, 0)
+      .fromTo(cardEls, { rotationZ: 10 }, { rotationZ: -10, ease: 'none' }, 0);
+  }
 
-    carousel._timeline
-      .fromTo(carousel, { rotationY: 0 }, { rotationY: -180 }, 0) // Rotate carousel horizontally
-      .fromTo(
-        carousel,
-        { rotationZ: 3, rotationX: 3 },
-        { rotationZ: -3, rotationX: -3 },
-        0
-      ) // Subtle 3D tilt
-      .fromTo(
-        cards,
-        { filter: 'brightness(250%)' },
-        { filter: 'brightness(80%)', ease: 'power3' },
-        0
-      ) // Brightness dimming
-      .fromTo(cards, { rotationZ: 10 }, { rotationZ: -10, ease: 'none' }, 0); // Rotate cards around Z
-
-    // Animate title characters in on scroll
-    if (chars.length > 0) {
-      animateChars(chars, 'in', {
-        scrollTrigger: {
-          trigger: wrapper,
-          start: 'top center',
-          toggleActions: 'play none none reverse',
-        },
-      });
-    }
-
-    return carousel._timeline;
-  };
-
-  const initTextsSplit = () => {
-    document
-      .querySelectorAll(
-        '.scene__title span, .preview__title span, .preview__close'
-      )
-      .forEach((span) => {
-        const split = SplitText.create(span, {
-          type: 'chars', // Split by characters
-          charsClass: 'char', // Assign class to each character
-          autoSplit: true, // Revert and re-split whenever the fonts finish loading
-        });
-        splitMap.set(span, split); // Store split instance for reuse
-      });
-  };
-
-  const getInterpolatedRotation = (progress) => ({
-    rotationY: gsap.utils.interpolate(0, -180, progress), // Horizontal spin from 0° to -180°
-    rotationX: gsap.utils.interpolate(3, -3, progress), // Tilt forward/backward
-    rotationZ: gsap.utils.interpolate(3, -3, progress), // Z-axis twist
-  });
-
-  const animateGridItemIn = (el, dx, dy, rotationY, delay) => {
-    gsap.fromTo(
-      el,
-      {
-        transformOrigin: `% 50% ${dx > 0 ? -dx * 0.8 : dx * 0.8}px`,
-        autoAlpha: 0,
-        y: dy * 0.5, // Slight vertical offset
-        scale: 0.5, // Scaled down
-        rotationY: dx < 0 ? rotationY : rotationY, // Rotate in from left/right
-      },
-      {
-        y: 0,
-        scale: 1,
-        rotationY: 0,
-        autoAlpha: 1,
-        duration: 0.4,
-        ease: 'sine',
-        delay: delay + 0.1,
+  function render(filter, animate) {
+    const subset = MANIFEST.filter((t) => filter === 'all' || t.category === filter);
+    const doSwap = () => {
+      drag.innerHTML = subset.map(cardHTML).join('');
+      cells = Array.from(drag.querySelectorAll('.carousel__cell'));
+      layout();
+      buildTimeline();
+      if (hasGSAP) ScrollTrigger.refresh();
+      if (animate && hasGSAP && !reduced) {
+        gsap.fromTo(cells, { autoAlpha: 0, scale: 0.85 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'power2.out', stagger: 0.03 });
       }
-    );
-
-    gsap.fromTo(
-      el,
-      { z: -3500 },
-      {
-        z: 0,
-        duration: 0.3,
-        ease: 'expo',
-        delay,
-      }
-    );
-  };
-
-  const animateGridItemOut = (
-    el,
-    dx,
-    dy,
-    rotationY,
-    delay,
-    isLast,
-    onComplete
-  ) => {
-    gsap.to(el, {
-      startAt: {
-        transformOrigin: `50% 50% ${dx > 0 ? -dx * 0.8 : dx * 0.8}px`,
-      },
-      y: dy * 0.4,
-      rotationY: dx < 0 ? rotationY : rotationY,
-      scale: 0.4,
-      autoAlpha: 0,
-      duration: 0.4,
-      ease: 'sine.in',
-      delay,
-    });
-    gsap.to(el, {
-      z: -3500,
-      duration: 0.4,
-      ease: 'expo.in',
-      delay: delay + 0.9,
-      onComplete: isLast ? onComplete : undefined, // Call onComplete only for the last item
-    });
-  };
-
-  const animateGridItems = ({
-    items,
-    centerX,
-    centerY,
-    direction = 'in',
-    onComplete,
-  }) => {
-    const itemData = Array.from(items).map((el) => {
-      const rect = el.getBoundingClientRect();
-      const elCenterX = rect.left + rect.width / 2;
-      const elCenterY = rect.top + rect.height / 2;
-      const dx = centerX - elCenterX;
-      const dy = centerY - elCenterY;
-      const dist = Math.hypot(dx, dy); // Euclidean distance from center
-      const isLeft = elCenterX < centerX;
-      return { el, dx, dy, dist, isLeft };
-    });
-
-    const maxDist = Math.max(...itemData.map((d) => d.dist)); // Farthest distance
-    const totalStagger = 0.025 * (itemData.length - 1); // Total stagger duration
-
-    let latest = { delay: -1, el: null }; // Track latest delay item
-
-    itemData.forEach(({ el, dx, dy, dist, isLeft }) => {
-      const norm = maxDist ? dist / maxDist : 0; // Normalize distance
-      const exponential = Math.pow(direction === 'in' ? 1 - norm : norm, 1); // Easing
-      const delay = exponential * totalStagger;
-      const rotationY = isLeft ? 100 : -100; // Directional rotation
-
-      if (direction === 'in') {
-        animateGridItemIn(el, dx, dy, rotationY, delay);
-      } else {
-        if (delay > latest.delay) {
-          latest = { delay, el };
-        }
-        animateGridItemOut(el, dx, dy, rotationY, delay, false, onComplete);
-      }
-    });
-
-    if (direction === 'out' && latest.el) {
-      const { el, dx, dy, isLeft } = itemData.find((d) => d.el === latest.el);
-      const rotationY = isLeft ? 100 : -100;
-      animateGridItemOut(el, dx, dy, rotationY, latest.delay, true, onComplete);
-    }
-  };
-
-  const animatePreviewGridIn = (preview) => {
-    const items = preview.querySelectorAll('.grid__item');
-    gsap.set(items, { clearProps: 'all' });
-    animateGridItems({
-      items,
-      centerX: window.innerWidth / 2,
-      centerY: window.innerHeight / 2,
-      direction: 'in',
-    });
-  };
-
-  const animatePreviewGridOut = (preview) => {
-    const items = preview.querySelectorAll('.grid__item');
-    const onComplete = () =>
-      gsap.set(preview, { pointerEvents: 'none', autoAlpha: 0 });
-    animateGridItems({
-      items,
-      centerX: window.innerWidth / 2,
-      centerY: window.innerHeight / 2,
-      direction: 'out',
-      onComplete,
-    });
-  };
-
-  const getSceneElementsFromTitle = (titleEl) => {
-    const wrapper = titleEl.closest('.scene'); // Scene container
-    const carousel = wrapper?.querySelector('.carousel'); // Carousel in the scene
-    const cards = carousel?.querySelectorAll('.card'); // All card elements
-    const span = titleEl.querySelector('span'); // Title span
-    const chars = splitMap.get(span)?.chars || []; // SplitText chars
-    return { wrapper, carousel, cards, span, chars };
-  };
-
-  const getSceneElementsFromPreview = (previewEl) => {
-    const previewId = `#${previewEl.id}`;
-    const titleLink = document.querySelector(
-      `.scene__title a[href="${previewId}"]`
-    );
-    const titleEl = titleLink?.closest('.scene__title'); // Corresponding title element
-    return { ...getSceneElementsFromTitle(titleEl), titleEl };
-  };
-
-  const animateChars = (chars, direction = 'in', opts = {}) => {
-    const base = {
-      autoAlpha: direction === 'in' ? 1 : 0,
-      duration: 0.02,
-      ease: 'none',
-      stagger: { each: 0.04, from: direction === 'in' ? 'start' : 'end' },
-      ...opts,
     };
-
-    gsap.fromTo(chars, { autoAlpha: direction === 'in' ? 0 : 1 }, base);
-  };
-
-  const animatePreviewTexts = (
-    preview,
-    direction = 'in',
-    selector = '.preview__title span, .preview__close'
-  ) => {
-    preview.querySelectorAll(selector).forEach((el) => {
-      const chars = splitMap.get(el)?.chars || [];
-      animateChars(chars, direction);
-    });
-  };
-
-  const activatePreviewFromCarousel = (e) => {
-    e.preventDefault();
-    if (isAnimating) return;
-    isAnimating = true;
-
-    const titleEl = e.currentTarget;
-    const { wrapper, carousel, cards, chars } =
-      getSceneElementsFromTitle(titleEl);
-
-    // Calculate scroll position to center the scene
-    const offsetTop = wrapper.getBoundingClientRect().top + window.scrollY;
-    const targetY = offsetTop - window.innerHeight / 2 + wrapper.offsetHeight / 2;
-
-    // Temporarily disable scroll-based animations
-    ScrollTrigger.getAll().forEach((t) => t.disable(false));
-
-    gsap
-      .timeline({
-        defaults: { duration: 1.5, ease: 'power2.inOut' },
-        onComplete: () => {
-          isAnimating = false;
-          ScrollTrigger.getAll().forEach((t) => t.enable());
-          carousel._timeline.scrollTrigger.scroll(targetY);
-        },
-      })
-      .to(window, {
-        onStart: () => {
-          lockUserScroll();
-        },
-        onComplete: () => {
-          unlockUserScroll();
-          smoother.paused(true);
-        },
-        scrollTo: { y: targetY, autoKill: true },
-      })
-      .to(
-        chars,
-        {
-          autoAlpha: 0,
-          duration: 0.02,
-          ease: 'none',
-          stagger: { each: 0.04, from: 'end' },
-        },
-        0
-      )
-      .to(carousel, { rotationX: 90, rotationY: -360, z: -2000 }, 0)
-      .to(
-        carousel,
-        {
-          duration: 2.5,
-          ease: 'power3.inOut',
-          z: 1500,
-          rotationZ: 270,
-          onComplete: () => gsap.set(sceneWrapper, { autoAlpha: 0 }),
-        },
-        0.7
-      )
-      .to(cards, { rotationZ: 0 }, 0)
-      .add(() => {
-        const previewSelector = titleEl.querySelector('a')?.getAttribute('href');
-        const preview = document.querySelector(previewSelector);
-        gsap.set(preview, { pointerEvents: 'auto', autoAlpha: 1 });
-        animatePreviewGridIn(preview);
-        animatePreviewTexts(preview, 'in');
-      }, '<+=1.9');
-  };
-
-  const deactivatePreviewToCarousel = (e) => {
-    if (isAnimating) return;
-    isAnimating = true;
-
-    const preview = e.currentTarget.closest('.preview');
-    if (!preview) return;
-
-    const { carousel, cards, chars } = getSceneElementsFromPreview(preview);
-
-    animatePreviewTexts(preview, 'out');
-    animatePreviewGridOut(preview);
-
-    gsap.set(sceneWrapper, { autoAlpha: 1 });
-
-    const progress = 0.5; // halfway
-
-    const { rotationX, rotationY, rotationZ } = getInterpolatedRotation(progress);
-
-    gsap
-      .timeline({
-        delay: 0.7,
-        defaults: { duration: 1.3, ease: 'expo' },
-        onComplete: () => {
-          smoother.paused(false);
-          isAnimating = false;
-        },
-      })
-      .fromTo(
-        chars,
-        { autoAlpha: 0 },
-        {
-          autoAlpha: 1,
-          duration: 0.02,
-          ease: 'none',
-          stagger: { each: 0.04, from: 'start' },
-        }
-      )
-      .fromTo(
-        carousel,
-        {
-          z: -550,
-          rotationX,
-          rotationY: -720,
-          rotationZ,
-          yPercent: 300,
-        },
-        {
-          rotationY,
-          yPercent: 0,
-        },
-        0
-      )
-      .fromTo(cards, { autoAlpha: 0 }, { autoAlpha: 1 }, 0.3);
-  };
-
-  const initEventListeners = () => {
-    document.querySelectorAll('.scene__title').forEach((title) => {
-      title.addEventListener('click', activatePreviewFromCarousel);
-    });
-
-    document.querySelectorAll('.preview__close').forEach((btn) => {
-      btn.addEventListener('click', deactivatePreviewToCarousel);
-    });
-  };
-
-  const initCarousels = () => {
-    document.querySelectorAll('.carousel').forEach((carousel) => {
-      setupCarouselCells(carousel); // Position carousel cells in 3D
-      carousel._timeline = createScrollAnimation(carousel); // Attach scroll animation timeline
-    });
-  };
-
-  function preventScroll(e) {
-    e.preventDefault();
-  }
-
-  function lockUserScroll() {
-    window.addEventListener('wheel', preventScroll, { passive: false });
-    window.addEventListener('touchmove', preventScroll, { passive: false });
-    window.addEventListener('keydown', preventArrowScroll, false);
-  }
-
-  function unlockUserScroll() {
-    window.removeEventListener('wheel', preventScroll);
-    window.removeEventListener('touchmove', preventScroll);
-    window.removeEventListener('keydown', preventArrowScroll);
-  }
-
-  function preventArrowScroll(e) {
-    const keys = [
-      'ArrowUp',
-      'ArrowDown',
-      'PageUp',
-      'PageDown',
-      'Home',
-      'End',
-      ' ',
-    ];
-    if (keys.includes(e.key)) e.preventDefault();
-  }
-
-  // Adaptation: pointer drag + trackpad swipe rotate the carousel. The rotation is
-  // applied to the inner .carousel__drag layer so it composes with (and never fights)
-  // the scroll-scrubbed timeline that GSAP runs on .carousel itself.
-  const initDragRotation = () => {
-    document.querySelectorAll('.scene').forEach((sceneEl) => {
-      const dragEl = sceneEl.querySelector('.carousel__drag');
-      if (!dragEl) return;
-      let dragging = false, lastX = 0, rot = 0;
-      sceneEl.addEventListener('pointerdown', (e) => {
-        dragging = true;
-        lastX = e.clientX;
-        sceneEl.classList.add('grabbing');
-      });
-      window.addEventListener('pointermove', (e) => {
-        if (!dragging) return;
-        const dx = e.clientX - lastX;
-        lastX = e.clientX;
-        rot += dx * 0.35;
-        gsap.set(dragEl, { rotationY: rot });
-      }, { passive: true });
-      window.addEventListener('pointerup', () => {
-        dragging = false;
-        sceneEl.classList.remove('grabbing');
-      });
-      /* trackpad horizontal swipe; vertical wheel passes through to page scroll */
-      sceneEl.addEventListener('wheel', (e) => {
-        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-        e.preventDefault();
-        rot -= e.deltaX * 0.25;
-        gsap.set(dragEl, { rotationY: rot });
-      }, { passive: false });
-    });
-  };
-
-  const init = () => {
-    // Adaptation: smaller orbit radius on narrow screens via the library's own data-radius API
-    if (window.matchMedia('(max-width: 560px)').matches) {
-      document.querySelectorAll('.scene').forEach((s) => { s.dataset.radius = '300'; });
+    if (animate && hasGSAP && !reduced && cells.length) {
+      gsap.to(drag, { autoAlpha: 0, duration: 0.25, ease: 'power1.in', onComplete: () => { gsap.set(drag, { autoAlpha: 1 }); doSwap(); } });
+    } else {
+      doSwap();
     }
-    initTextsSplit(); // Prepare character-level splits for animations
-    initCarousels(); // Set up carousels with transforms and scroll triggers
-    initEventListeners(); // Bind all interactive handlers
-    initDragRotation(); // Pointer drag + trackpad swipe rotation
-    window.addEventListener('resize', ScrollTrigger.refresh); // Refresh triggers on resize
-  };
+  }
 
-  // Start app once images are preloaded
-  preloadImages('.grid__item-image').then(() => {
-    document.body.classList.remove('loading'); // Remove loading state from body
-    init(); // Begin initialization
+  // Explore → open the template in a new tab (delegated; keep drag from hijacking the click)
+  drag.addEventListener('pointerdown', (e) => { if (e.target.closest('[data-explore]')) e.stopPropagation(); });
+  drag.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-explore]');
+    if (!btn) return;
+    e.preventDefault();
+    window.open(btn.getAttribute('data-explore'), '_blank');
   });
+
+  // Category filter pills
+  if (filtersBar) {
+    filtersBar.addEventListener('click', (e) => {
+      const pill = e.target.closest('.filter-pill');
+      if (!pill) return;
+      filtersBar.querySelectorAll('.filter-pill').forEach((p) => { p.classList.remove('active'); p.setAttribute('aria-selected', 'false'); });
+      pill.classList.add('active');
+      pill.setAttribute('aria-selected', 'true');
+      render(pill.dataset.filter, true);
+    });
+  }
+
+  // Drag + trackpad rotation on the .carousel__drag layer (composes with the scroll-scrub on .carousel)
+  let dragging = false, lastX = 0;
+  scene.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('[data-explore]')) return; // let the button handle its own click
+    dragging = true; lastX = e.clientX; scene.classList.add('grabbing');
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX; lastX = e.clientX;
+    dragRot += dx * 0.35;
+    setRot(drag, dragRot);
+  }, { passive: true });
+  window.addEventListener('pointerup', () => { dragging = false; scene.classList.remove('grabbing'); });
+  scene.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical scroll passes through to the page
+    e.preventDefault();
+    dragRot -= e.deltaX * 0.25;
+    setRot(drag, dragRot);
+  }, { passive: false });
+
+  let rsT;
+  window.addEventListener('resize', () => {
+    clearTimeout(rsT);
+    rsT = setTimeout(() => { layout(); if (hasGSAP) ScrollTrigger.refresh(); }, 200);
+  });
+
+  // initial render — All (no transition)
+  render('all', false);
 })();
 </script>
 
