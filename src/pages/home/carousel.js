@@ -7,7 +7,7 @@ export function initCarousel() {
   const scene = drag.closest('.scene');
   const filtersBar = document.getElementById('template-filters');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const hasGSAP = !!(window.gsap && window.ScrollTrigger);
+  const hasGSAP = !!window.gsap;
 
   // MANIFEST · CAT_LABEL · routeFor are imported from ../../manifest.js
 
@@ -45,7 +45,7 @@ export function initCarousel() {
 
   let cells = [];
   let dragRot = 0;
-  let tl = null;
+  let dragging = false, lastX = 0;
 
   function setRot(el, deg) {
     if (hasGSAP) gsap.set(el, { rotationY: deg });
@@ -64,38 +64,21 @@ export function initCarousel() {
     const baseZ = -(radius - 40);
     if (hasGSAP) gsap.set(carousel, { z: baseZ, rotationX: 0, rotationY: 0, rotationZ: 0 });
     else carousel.style.transform = `translateZ(${baseZ}px) rotateY(0deg)`;
-    dragRot = 0;
-    setRot(drag, 0);
+    setRot(drag, dragRot);
   }
 
-  function buildTimeline() {
-    if (tl) { if (tl.scrollTrigger) tl.scrollTrigger.kill(); tl.kill(); tl = null; }
-    if (!hasGSAP || reduced) return;
-    const cardEls = drag.querySelectorAll('.card');
-    tl = gsap.timeline({
-      defaults: { ease: 'sine.inOut' },
-      scrollTrigger: { trigger: '#templates', start: 'top bottom', end: 'bottom top', scrub: true }
-    });
-    tl.fromTo(carousel, { rotationY: 0 }, { rotationY: -180 }, 0)
-      .fromTo(carousel, { rotationZ: 3, rotationX: 3 }, { rotationZ: -3, rotationX: -3 }, 0)
-      .fromTo(cardEls, { filter: 'brightness(250%)' }, { filter: 'brightness(80%)', ease: 'power3' }, 0)
-      .fromTo(cardEls, { rotationZ: 10 }, { rotationZ: -10, ease: 'none' }, 0);
-  }
-
-  // Hovering a card freezes the scroll-scrub rotation and pops the card flat to
-  // the front, so the orbiting 3D card becomes a steady, easy click target.
+  // Hovering a card pops it flat and stable so the orbiting 3D card is an easy
+  // click target. Auto-rotation is already paused while the pointer is in the
+  // scene (see the auto-rotate block below), so the card stays put.
   function bindHover() {
     drag.querySelectorAll('.card').forEach((card) => {
       card.addEventListener('mouseenter', () => {
-        if (tl && tl.scrollTrigger) tl.scrollTrigger.disable(false);
         card.classList.add('is-focused');
         if (hasGSAP) gsap.to(card, { rotationZ: 0, scale: 1.05, duration: 0.3, ease: 'power2.out', overwrite: true });
       });
       card.addEventListener('mouseleave', () => {
         card.classList.remove('is-focused');
-        const resume = () => { if (tl && tl.scrollTrigger) tl.scrollTrigger.enable(); };
-        if (hasGSAP) gsap.to(card, { scale: 1, duration: 0.3, ease: 'power2.out', overwrite: true, onComplete: resume });
-        else resume();
+        if (hasGSAP) gsap.to(card, { scale: 1, duration: 0.3, ease: 'power2.out', overwrite: true });
       });
     });
   }
@@ -106,9 +89,7 @@ export function initCarousel() {
       drag.innerHTML = subset.map(cardHTML).join('');
       cells = Array.from(drag.querySelectorAll('.carousel__cell'));
       layout();
-      buildTimeline();
       bindHover();
-      if (hasGSAP) ScrollTrigger.refresh();
       if (animate && hasGSAP && !reduced) {
         gsap.fromTo(cells, { autoAlpha: 0, scale: 0.85 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'power2.out', stagger: 0.03 });
       }
@@ -136,10 +117,11 @@ export function initCarousel() {
     });
   }
 
-  // Drag + trackpad rotation on the .carousel__drag layer (composes with the scroll-scrub on .carousel)
-  let dragging = false, lastX = 0;
+  // Drag-to-rotate on the orbit layer. NOTE: scroll / wheel is NOT captured
+  // anywhere — the page scrolls completely normally over the carousel. The orbit
+  // rotates on its own (auto-rotate below) and can be nudged by dragging.
   scene.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('[data-route]')) return; // let the button handle its own click
+    if (e.target.closest('[data-route]')) return; // let the link handle its own click
     dragging = true; lastX = e.clientX; scene.classList.add('grabbing');
   });
   window.addEventListener('pointermove', (e) => {
@@ -149,17 +131,26 @@ export function initCarousel() {
     setRot(drag, dragRot);
   }, { passive: true });
   window.addEventListener('pointerup', () => { dragging = false; scene.classList.remove('grabbing'); });
-  scene.addEventListener('wheel', (e) => {
-    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical scroll passes through to the page
-    e.preventDefault();
-    dragRot -= e.deltaX * 0.25;
-    setRot(drag, dragRot);
-  }, { passive: false });
+
+  // Gentle continuous auto-rotation. Pauses while the pointer is over the scene
+  // (so cards stay readable/clickable) and while dragging. No scroll capture, so
+  // vertical page scrolling is never intercepted — fixes the scroll-jump bug.
+  let hovering = false;
+  scene.addEventListener('mouseenter', () => { hovering = true; });
+  scene.addEventListener('mouseleave', () => { hovering = false; });
+  function autoTick() {
+    if (!hovering && !dragging) {
+      dragRot += 0.12;
+      setRot(drag, dragRot);
+    }
+    requestAnimationFrame(autoTick);
+  }
+  if (!reduced) requestAnimationFrame(autoTick);
 
   let rsT;
   window.addEventListener('resize', () => {
     clearTimeout(rsT);
-    rsT = setTimeout(() => { layout(); if (hasGSAP) ScrollTrigger.refresh(); }, 200);
+    rsT = setTimeout(layout, 200);
   });
 
   // initial render — All (no transition)
