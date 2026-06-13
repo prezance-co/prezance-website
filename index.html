@@ -425,22 +425,22 @@
   }
   .card__label .name { font-family: var(--sans); font-weight: 700; letter-spacing: -0.02em; font-size: 18px; color: var(--white); text-transform: none; }
   .card__label .cat { font-family: var(--mono); font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
-  /* Explore button — always visible on the front card. No transition/animation
-     here: a fading button on an orbiting card reads as a blink and fights clicks. */
+  /* Explore button — appears on card hover */
   .card__explore {
     position: absolute;
     top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(0.9);
     z-index: 30;
     font-family: var(--sans); font-size: 14px; font-weight: 500;
     background: var(--white); color: var(--black);
     border: none; border-radius: 100px;
     padding: 11px 22px; cursor: pointer;
-    opacity: 1; pointer-events: auto;
-    transition: none;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
     white-space: nowrap;
     box-shadow: 0 6px 20px rgba(0,0,0,0.35);
   }
+  .card:hover .card__explore { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
   /* Whole front face is a click target so the orbiting card is easy to hit */
   .card__face--front { cursor: pointer; }
   /* Hovered card is lifted above its neighbours for a clean, stable click */

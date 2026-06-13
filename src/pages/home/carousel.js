@@ -82,25 +82,20 @@ export function initCarousel() {
       .fromTo(cardEls, { rotationZ: 10 }, { rotationZ: -10, ease: 'none' }, 0);
   }
 
-  // Whole-carousel freeze: stop the scroll-scrub rotation completely while the
-  // pointer is anywhere inside the scene, and resume ONLY once it leaves the
-  // scene entirely. Bound once on the scene (below) — mouseenter/mouseleave don't
-  // fire when crossing between child cards, so moving card-to-card never restarts
-  // the rotation and the card never flees the cursor mid-click.
-  function freeze() { if (tl && tl.scrollTrigger) tl.scrollTrigger.disable(false); }
-  function resume() { if (tl && tl.scrollTrigger) tl.scrollTrigger.enable(); }
-
-  // Hovering a card pops it flat and stable (no tilt, no orbit drift). The scene
-  // freeze has already halted the carousel, so the card stays put under the cursor.
+  // Hovering a card freezes the scroll-scrub rotation and pops the card flat to
+  // the front, so the orbiting 3D card becomes a steady, easy click target.
   function bindHover() {
     drag.querySelectorAll('.card').forEach((card) => {
       card.addEventListener('mouseenter', () => {
+        if (tl && tl.scrollTrigger) tl.scrollTrigger.disable(false);
         card.classList.add('is-focused');
-        if (hasGSAP) gsap.to(card, { rotationZ: 0, rotationX: 0, scale: 1.05, duration: 0.3, ease: 'power2.out', overwrite: true });
+        if (hasGSAP) gsap.to(card, { rotationZ: 0, scale: 1.05, duration: 0.3, ease: 'power2.out', overwrite: true });
       });
       card.addEventListener('mouseleave', () => {
         card.classList.remove('is-focused');
-        if (hasGSAP) gsap.to(card, { scale: 1, duration: 0.3, ease: 'power2.out', overwrite: true });
+        const resume = () => { if (tl && tl.scrollTrigger) tl.scrollTrigger.enable(); };
+        if (hasGSAP) gsap.to(card, { scale: 1, duration: 0.3, ease: 'power2.out', overwrite: true, onComplete: resume });
+        else resume();
       });
     });
   }
@@ -124,11 +119,6 @@ export function initCarousel() {
       doSwap();
     }
   }
-
-  // Freeze the carousel the moment the pointer enters the scene; resume only when
-  // it leaves entirely. (mouseenter/mouseleave fire once for the scene, not per child.)
-  scene.addEventListener('mouseenter', freeze);
-  scene.addEventListener('mouseleave', resume);
 
   // Explore → navigate to the template/demo route (handled by the global router
   // click delegation via [data-route]); just keep the drag from hijacking the press.
