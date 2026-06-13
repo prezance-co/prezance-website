@@ -573,7 +573,7 @@
     .star { animation: none; }
   }
 </style>
-  <script type="module" crossorigin src="/assets/index-sRTifwSx.js"></script>
+  <script type="module" crossorigin src="/assets/index-BNhMyU56.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-Dc3m5dbN.css">
 </head>
 <body>
@@ -953,7 +953,162 @@
 </div><!-- /#app -->
 
 
-<!-- Prezi chatbot widget -->
+<!-- Prezi AI chat widget — custom, vanilla, streams from bot.prezance.co -->
+<script>
+(function () {
+  if (window.__prezi) return; window.__prezi = true;
+
+  var ENDPOINT = 'https://bot.prezance.co:8443/api/prezi-chat';
+  var LEAD_HOOK = 'https://n8n.prezance.co/webhook/prezi-lead';
+  var GREETING = "Hi! I'm Prezi 👋 I help businesses across the Middle East & Gulf get a stunning online presence. What kind of business do you have?";
+  var PREVIEW_DELAY = 5000;
+
+  // ---- styles -------------------------------------------------------------
+  var css = '\
+  #prezi-bubble,#prezi-win,#prezi-preview{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;box-sizing:border-box}\
+  #prezi-bubble *,#prezi-win *,#prezi-preview *{box-sizing:border-box}\
+  #prezi-bubble{position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.35);z-index:2147483000;border:none;transition:transform .2s ease,opacity .2s ease}\
+  #prezi-bubble:hover{transform:scale(1.06)}\
+  #prezi-preview{position:fixed;bottom:96px;right:24px;max-width:250px;background:#000;color:#fff;border:1px solid #242424;border-radius:14px;padding:12px 34px 12px 14px;font-size:14px;line-height:1.4;box-shadow:0 8px 28px rgba(0,0,0,.4);z-index:2147483000;cursor:pointer;opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease;pointer-events:none}\
+  #prezi-preview.show{opacity:1;transform:translateY(0);pointer-events:auto}\
+  #prezi-preview .x{position:absolute;top:6px;right:8px;width:18px;height:18px;border:none;background:transparent;color:#888;cursor:pointer;font-size:15px;line-height:1;padding:0}\
+  #prezi-preview .x:hover{color:#fff}\
+  #prezi-win{position:fixed;bottom:24px;right:24px;width:380px;height:600px;max-height:calc(100vh - 48px);background:#000;border:1px solid #1f1f1f;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;z-index:2147483000;opacity:0;transform:translateY(24px) scale(.98);visibility:hidden;pointer-events:none;transition:opacity .25s ease,transform .25s ease;box-shadow:0 20px 60px rgba(0,0,0,.5)}\
+  #prezi-win.open{opacity:1;transform:translateY(0) scale(1);visibility:visible;pointer-events:auto}\
+  #prezi-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #161616;flex-shrink:0}\
+  #prezi-head .t{font-size:16px;font-weight:600;color:#fff;letter-spacing:-.01em}\
+  #prezi-head .s{font-size:12px;color:#888;margin-top:1px}\
+  #prezi-head .x{border:none;background:transparent;color:#aaa;cursor:pointer;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}\
+  #prezi-head .x:hover{background:#141414;color:#fff}\
+  #prezi-msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}\
+  #prezi-msgs::-webkit-scrollbar{width:6px}#prezi-msgs::-webkit-scrollbar-thumb{background:#222;border-radius:3px}\
+  .prezi-msg{max-width:82%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere;animation:preziIn .2s ease}\
+  .prezi-host{background:#111;color:#fff;align-self:flex-start;border-bottom-left-radius:5px}\
+  .prezi-guest{background:#fff;color:#000;align-self:flex-end;border-bottom-right-radius:5px}\
+  @keyframes preziIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}\
+  .prezi-dots{display:inline-flex;gap:4px;padding:2px 0}\
+  .prezi-dots i{width:6px;height:6px;border-radius:50%;background:#888;display:inline-block;animation:preziBlink 1.2s infinite both}\
+  .prezi-dots i:nth-child(2){animation-delay:.2s}.prezi-dots i:nth-child(3){animation-delay:.4s}\
+  @keyframes preziBlink{0%,80%,100%{opacity:.25}40%{opacity:1}}\
+  #prezi-bar{display:flex;gap:8px;align-items:flex-end;padding:12px;border-top:1px solid #161616;flex-shrink:0}\
+  #prezi-in{flex:1;background:#111;color:#fff;border:1px solid #222;border-radius:12px;padding:10px 12px;font-size:14px;font-family:inherit;resize:none;max-height:110px;outline:none;line-height:1.4}\
+  #prezi-in::placeholder{color:#666}#prezi-in:focus{border-color:#333}\
+  #prezi-send{width:38px;height:38px;border-radius:50%;background:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:opacity .15s}\
+  #prezi-send:disabled{opacity:.4;cursor:default}\
+  @media (max-width:480px){#prezi-win{width:100vw;height:100vh;height:100dvh;max-height:100dvh;bottom:0;right:0;border-radius:0;border:none}}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  // ---- DOM ---------------------------------------------------------------
+  var chatIcon = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" fill="#000"/></svg>';
+  var closeIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  var sendIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>';
+
+  var bubble = el('button', 'prezi-bubble'); bubble.id = 'prezi-bubble'; bubble.innerHTML = chatIcon; bubble.setAttribute('aria-label', 'Open chat');
+  var preview = el('div'); preview.id = 'prezi-preview';
+  preview.innerHTML = '<button class="x" aria-label="Dismiss">' + '✕' + '</button>Need a website? Chat with Prezi 👋';
+  var win = el('div'); win.id = 'prezi-win'; win.setAttribute('role', 'dialog'); win.setAttribute('aria-label', 'Prezi chat');
+  win.innerHTML =
+    '<div id="prezi-head"><div><div class="t">Prezi</div><div class="s">Digital presence assistant</div></div>' +
+    '<button class="x" aria-label="Close">' + closeIcon + '</button></div>' +
+    '<div id="prezi-msgs"></div>' +
+    '<div id="prezi-bar"><textarea id="prezi-in" rows="1" placeholder="Type your message…"></textarea>' +
+    '<button id="prezi-send" aria-label="Send">' + sendIcon + '</button></div>';
+  document.body.appendChild(bubble); document.body.appendChild(preview); document.body.appendChild(win);
+
+  var msgs = win.querySelector('#prezi-msgs');
+  var input = win.querySelector('#prezi-in');
+  var sendBtn = win.querySelector('#prezi-send');
+
+  // ---- state -------------------------------------------------------------
+  var history = [{ role: 'assistant', content: GREETING }]; // in-memory only
+  var businessType = '', service = '', streaming = false, greeted = false, dismissed = false, leadSent = false;
+
+  // ---- helpers -----------------------------------------------------------
+  function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
+  function scrollBottom() { msgs.scrollTop = msgs.scrollHeight; }
+  function bubbleEl(kind, text) {
+    var d = el('div', 'prezi-msg ' + (kind === 'guest' ? 'prezi-guest' : 'prezi-host'));
+    if (text != null) d.textContent = text;
+    msgs.appendChild(d); scrollBottom(); return d;
+  }
+  function detect(text, map) { text = text.toLowerCase(); for (var i = 0; i < map.length; i++) if (text.indexOf(map[i][0]) >= 0) return map[i][1]; return ''; }
+  var BIZ = [['medical','Medical & Healthcare'],['clinic','Medical & Healthcare'],['dental','Medical & Healthcare'],['doctor','Medical & Healthcare'],['health','Medical & Healthcare'],['restaurant','Restaurant & Café'],['cafe','Restaurant & Café'],['café','Restaurant & Café'],['food','Restaurant & Café'],['law','Law & Legal'],['legal','Law & Legal'],['lawyer','Law & Legal'],['saas','App & SaaS'],['startup','App & SaaS'],['software','App & SaaS'],[' app','App & SaaS'],['real estate','Business & Corporate'],['store','Business & Corporate'],['shop','Business & Corporate'],['business','Business & Corporate'],['corporate','Business & Corporate']];
+  var SVC = [['website','Professional Website'],['site','Professional Website'],['app','Mobile App'],['chatbot','AI Chatbot'],['booking','Booking System'],['menu','Digital Menu'],['seo','Google & SEO'],['google','Google & SEO']];
+
+  function sendLead() {
+    if (leadSent) return; leadSent = true;
+    var userText = history.filter(function (m) { return m.role === 'user'; }).map(function (m) { return m.content; }).join('\n');
+    var phone = (userText.match(/(\+?\d[\d\s\-]{6,}\d)/) || [''])[0].replace(/\s/g, '');
+    var nm = userText.match(/(?:my name is|i'?m|i am|this is|name'?s)\s+([A-Za-z][A-Za-z'\-\s]{1,30})/i);
+    var payload = { name: nm ? nm[1].trim() : '', phone: phone, business_type: businessType, service: service, timestamp: new Date().toISOString() };
+    fetch(LEAD_HOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(function () {});
+  }
+
+  function autosize() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 110) + 'px'; }
+
+  // ---- send + stream -----------------------------------------------------
+  function send() {
+    if (streaming) return;
+    var text = input.value.trim(); if (!text) return;
+    if (!businessType) { var bt = detect(text, BIZ); if (bt) businessType = bt; }
+    var sv = detect(text, SVC); if (sv) service = sv;
+    history.push({ role: 'user', content: text });
+    bubbleEl('guest', text);
+    input.value = ''; autosize();
+    streaming = true; sendBtn.disabled = true;
+    var host = bubbleEl('host', null);
+    host.innerHTML = '<span class="prezi-dots"><i></i><i></i><i></i></span>';
+
+    fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: history, business_type: businessType }) })
+      .then(function (resp) {
+        if (!resp.ok || !resp.body) throw new Error('http ' + resp.status);
+        var reader = resp.body.getReader(), dec = new TextDecoder(), acc = '';
+        function pump() {
+          return reader.read().then(function (r) {
+            if (r.done) return;
+            acc += dec.decode(r.value, { stream: true });
+            host.textContent = acc; scrollBottom();
+            return pump();
+          });
+        }
+        return pump().then(function () {
+          if (!acc) host.textContent = 'Sorry — I had trouble responding. Could you try again?';
+          else history.push({ role: 'assistant', content: acc });
+          if (/whatsapp you shortly|presence, perfected/i.test(acc)) sendLead();
+        });
+      })
+      .catch(function () {
+        host.textContent = "Sorry — I'm having trouble connecting right now. Please email hello@prezance.co and we'll get right back to you.";
+      })
+      .then(function () { streaming = false; sendBtn.disabled = false; input.focus(); });
+  }
+
+  // ---- open / close / preview -------------------------------------------
+  function showPreview() { if (dismissed || win.classList.contains('open')) return; preview.classList.add('show'); }
+  function hidePreview() { preview.classList.remove('show'); }
+  function openChat() {
+    hidePreview(); dismissed = true;
+    bubble.style.opacity = '0'; bubble.style.pointerEvents = 'none';
+    win.classList.add('open');
+    if (!greeted) { bubbleEl('host', GREETING); greeted = true; }
+    setTimeout(function () { input.focus(); }, 260);
+  }
+  function closeChat() {
+    win.classList.remove('open');
+    bubble.style.opacity = '1'; bubble.style.pointerEvents = 'auto';
+  }
+
+  // ---- wire up -----------------------------------------------------------
+  bubble.addEventListener('click', openChat);
+  preview.addEventListener('click', function (e) { if (!e.target.closest('.x')) openChat(); });
+  preview.querySelector('.x').addEventListener('click', function (e) { e.stopPropagation(); dismissed = true; hidePreview(); });
+  win.querySelector('#prezi-head .x').addEventListener('click', closeChat);
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('input', autosize);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+  setTimeout(showPreview, PREVIEW_DELAY);
+})();
+</script>
 
 </body>
 </html>
