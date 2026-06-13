@@ -958,7 +958,6 @@
   if (window.__prezi) return; window.__prezi = true;
 
   var ENDPOINT = 'https://bot.prezance.co:8443/api/prezi-chat';
-  var LEAD_HOOK = 'https://n8n.prezance.co/webhook/prezi-lead';
   var GREETING = "Hi! I'm Prezi 👋 I help businesses across the Middle East & Gulf get a stunning online presence. What kind of business do you have?";
   var PREVIEW_DELAY = 5000;
 
@@ -1020,7 +1019,7 @@
 
   // ---- state -------------------------------------------------------------
   var history = [{ role: 'assistant', content: GREETING }]; // in-memory only
-  var businessType = '', service = '', streaming = false, greeted = false, dismissed = false, leadSent = false;
+  var businessType = '', streaming = false, greeted = false, dismissed = false;
 
   // ---- helpers -----------------------------------------------------------
   function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
@@ -1032,16 +1031,8 @@
   }
   function detect(text, map) { text = text.toLowerCase(); for (var i = 0; i < map.length; i++) if (text.indexOf(map[i][0]) >= 0) return map[i][1]; return ''; }
   var BIZ = [['medical','Medical & Healthcare'],['clinic','Medical & Healthcare'],['dental','Medical & Healthcare'],['doctor','Medical & Healthcare'],['health','Medical & Healthcare'],['restaurant','Restaurant & Café'],['cafe','Restaurant & Café'],['café','Restaurant & Café'],['food','Restaurant & Café'],['law','Law & Legal'],['legal','Law & Legal'],['lawyer','Law & Legal'],['saas','App & SaaS'],['startup','App & SaaS'],['software','App & SaaS'],[' app','App & SaaS'],['real estate','Business & Corporate'],['store','Business & Corporate'],['shop','Business & Corporate'],['business','Business & Corporate'],['corporate','Business & Corporate']];
-  var SVC = [['website','Professional Website'],['site','Professional Website'],['app','Mobile App'],['chatbot','AI Chatbot'],['booking','Booking System'],['menu','Digital Menu'],['seo','Google & SEO'],['google','Google & SEO']];
-
-  function sendLead() {
-    if (leadSent) return; leadSent = true;
-    var userText = history.filter(function (m) { return m.role === 'user'; }).map(function (m) { return m.content; }).join('\n');
-    var phone = (userText.match(/(\+?\d[\d\s\-]{6,}\d)/) || [''])[0].replace(/\s/g, '');
-    var nm = userText.match(/(?:my name is|i'?m|i am|this is|name'?s)\s+([A-Za-z][A-Za-z'\-\s]{1,30})/i);
-    var payload = { name: nm ? nm[1].trim() : '', phone: phone, business_type: businessType, service: service, timestamp: new Date().toISOString() };
-    fetch(LEAD_HOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(function () {});
-  }
+  // Lead capture (name + phone) is handled server-side: the /api/prezi-chat
+  // endpoint detects the captured lead and emails it to the team.
 
   function autosize() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 110) + 'px'; }
 
@@ -1050,7 +1041,6 @@
     if (streaming) return;
     var text = input.value.trim(); if (!text) return;
     if (!businessType) { var bt = detect(text, BIZ); if (bt) businessType = bt; }
-    var sv = detect(text, SVC); if (sv) service = sv;
     history.push({ role: 'user', content: text });
     bubbleEl('guest', text);
     input.value = ''; autosize();
@@ -1073,7 +1063,6 @@
         return pump().then(function () {
           if (!acc) host.textContent = 'Sorry — I had trouble responding. Could you try again?';
           else history.push({ role: 'assistant', content: acc });
-          if (/whatsapp you shortly|presence, perfected/i.test(acc)) sendLead();
         });
       })
       .catch(function () {
