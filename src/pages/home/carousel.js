@@ -157,6 +157,21 @@ export function initCarousel() {
     setRot(drag, dragRot);
   }, { passive: false });
 
+  // Gentle auto-rotation: nudge the orbit a hair each frame so it drifts slowly
+  // on its own. Pauses while the pointer is over the carousel or while dragging,
+  // and resumes once the user stops.
+  let hovering = false;
+  scene.addEventListener('mouseenter', () => { hovering = true; });
+  scene.addEventListener('mouseleave', () => { hovering = false; });
+  function autoRotate() {
+    if (!hovering && !dragging) {
+      dragRot += 0.0125;
+      setRot(drag, dragRot);
+    }
+    requestAnimationFrame(autoRotate);
+  }
+  if (!reduced) requestAnimationFrame(autoRotate);
+
   let rsT;
   window.addEventListener('resize', () => {
     clearTimeout(rsT);
